@@ -208,6 +208,15 @@ h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.2
 .m-count small{display:block;font-size:.72rem;color:var(--muted)}
 .summary{margin:0 0 6px;font-size:.88rem;color:var(--muted)}
 .extra{margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+.mats li.can-x{grid-template-columns:38px minmax(0,1fr) auto auto}
+.m-x{background:transparent;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem;color:var(--muted);cursor:pointer}
+.m-x:hover,.m-x:focus-visible{color:var(--danger);border-color:var(--danger)}
+.excl{margin-top:12px;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;font-size:.85rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.excl p{margin:0;flex-basis:100%;color:var(--muted)}
+.excl button{font-size:.8rem;padding:4px 10px}
+.excl .msg{color:var(--danger)}
+.feet{font-size:.85rem;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.feet input{width:4.5em;margin-left:6px}
 .copy-row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
 .copy-row span{font-size:.82rem;color:var(--muted)}
 
@@ -341,6 +350,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
           <button type="button" id="dlZip">File struttura (.zip)</button>
           <button type="button" id="dlPack">Fantasma vanilla (data pack)</button>
         </div>
+        <p class="feet" id="feetRow" hidden><span id="feetTxt"></span> <label>Livelli sotto i piedi <input type="number" id="feetIn" min="0" step="1" inputmode="numeric"></label></p>
         <p id="dlMsg" aria-live="polite">Il manuale ha una pagina per livello. Lo zip contiene .litematic per Litematica, .schem per WorldEdit e .nbt per il blocco struttura.</p>
         <details class="howto">
           <summary>Come usare il fantasma senza mod</summary>
@@ -432,6 +442,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
         <p class="summary" id="matSummary"></p>
         <ul class="mats" id="mats"></ul>
         <p class="extra" id="matExtra"></p>
+        <div class="excl" id="exclBox" hidden></div>
         <div class="copy-row"><button type="button" id="copyMats">Copia elenco</button><span id="copyMsg" aria-live="polite"></span></div>
       </section>
 
@@ -752,7 +763,22 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 " (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.": " (right blocks turned a different way). You can fix them or move on.",
 "Blocco sbagliato: qui va ": "Wrong block: this spot needs ",
 "Blocco giusto ma girato in un altro modo: ": "Right block, turned a different way: ",
-". Guarda il modello 3D nell'app.": ". Check the 3D model in the app."
+". Guarda il modello 3D nell'app.": ". Check the 3D model in the app.",
+"Livelli sotto i piedi": "Layers below your feet",
+"Escludi": "Exclude",
+"Escludi {0}: niente fantasma e non conta nei materiali": "Exclude {0}: no ghost and not counted in materials",
+"Esclusi, senza fantasma e non contati ({0} blocchi). Tocca per rimetterli:": "Excluded, with no ghost and not counted ({0} blocks). Tap to bring them back:",
+"Rimetti {0}": "Bring back {0}",
+"Rimetti tutto": "Bring everything back",
+"Questo file contiene blocchi di terreno (terra, pietra, minerali). Se non fanno parte della costruzione, escludili: spariscono dai fantasmi e dai materiali.": "This file contains terrain blocks (dirt, stone, ores). If they are not part of the build, exclude them: they disappear from the ghosts and the materials.",
+"Escludi il terreno": "Exclude terrain",
+"Non posso escludere tutto: la costruzione resterebbe vuota.": "I can't exclude everything: the build would be empty.",
+"Il livello 1 è sotto il terreno: nel gioco mettiti sopra il terreno e il fantasma compare un blocco sotto i tuoi piedi.": "Layer 1 is below ground: in the game stand on the ground and the ghost appears one block below your feet.",
+"I primi {0} livelli sono sotto il terreno: nel gioco mettiti sopra il terreno e il fantasma del livello 1 compare {0} blocchi sotto i tuoi piedi.": "The first {0} layers are below ground: in the game stand on the ground and the layer 1 ghost appears {0} blocks below your feet.",
+"La costruzione parte dal livello dei tuoi piedi. Se una parte va sotto terra, indica quanti livelli.": "The build starts at the level of your feet. If part of it goes underground, enter how many layers.",
+"Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.": "Layer 1 is underground: it appears one block below your feet, dig there.",
+"I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below your feet, dig there.",
+"Ho escluso {0} blocchi di terreno (terra, pietra, minerali): puoi rimetterli dall'elenco dei materiali.": "I excluded {0} terrain blocks (dirt, stone, ores): you can bring them back from the materials list."
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -1668,28 +1694,54 @@ function parseStructure(root){
 const IMP_DESC='Importata dal file {0}. I nomi dei blocchi che non ho in italiano restano quelli del gioco in inglese.';
 const IMP_TIPS=['Nella griglia la freccia bianca indica il lato alto di scale e blocchi orientati.','Blocchi speciali come porte, cartelli o oggetti con dati extra sono mostrati in forma semplificata.','Per la ricostruzione più comoda carica lo stesso file in Litematica: mostra un ologramma nel mondo.'];
 function buildFromCells(id,name,file,X,Y,Z,cells,dv){
-  const arr=new Array(X*Y*Z).fill(null),layers=[...Array(Y)].map(()=>[]);
-  for(const[x,y,z,t]of cells){const k=(y*Z+z)*X+x;if(arr[k])continue;arr[k]=t;layers[y].push({x,z,t});}
-  for(const L of layers)L.sort((p,q)=>p.z-q.z||p.x-q.x);
-  const total=layers.reduce((s,L)=>s+L.length,0);
-  return{id,name,file,dv:dv||null,imported:true,cat:'Importate',tag:'File',diff:'—',front:null,style:{},slots:[],X,Y,Z,arr,layers,total,
-    desc:T(IMP_DESC,file),extra:'',tips:IMP_TIPS.map(x=>T(x))};
+  const arr=new Array(X*Y*Z).fill(null);
+  for(const[x,y,z,t]of cells){const k=(y*Z+z)*X+x;if(!arr[k])arr[k]=t;}
+  const B={id,name,file,dv:dv||null,imported:true,cat:'Importate',tag:'File',diff:'—',front:null,style:{},slots:[],
+    orig:{X,Y,Z,arr},excl:new Set(),feetSet:null,desc:T(IMP_DESC,file),extra:'',tips:IMP_TIPS.map(x=>T(x))};
+  applyExcl(B);return B;
 }
+/* terreno: molti file includono il suolo attorno alla costruzione (terra, pietra, minerali). Si può escludere:
+   quei blocchi non hanno fantasma, non contano nei materiali e i livelli rimasti vuoti in fondo spariscono */
+const TERRAIN=/^(dirt|coarse_dirt|rooted_dirt|grass_block|podzol|mycelium|mud|stone|granite|diorite|andesite|deepslate|tuff|calcite|gravel|sand|red_sand|clay|bedrock|dripstone_block|netherrack|soul_sand|soul_soil|end_stone|short_grass|grass|tall_grass|fern|large_fern|dead_bush|snow|powder_snow|[a-z_]*_ore|infested_[a-z_]+)$/;
+const MK=new Map();
+const matKey=t=>{let k=MK.get(t);if(k==null){const mc=matOf(t).d.mc||'';k=mc.slice(mc.lastIndexOf(':')+1);MK.set(t,k);}return k;};
+// piano del terreno: il livello più alto, contando dal fondo senza interruzioni, coperto per almeno il 40% da blocchi esclusi
+function groundTop(o,isOut){let top=-1;for(let y=0;y<o.Y;y++){let n=0;
+  for(let i=y*o.X*o.Z,e=i+o.X*o.Z;i<e;i++){const t=o.arr[i];if(t&&isOut(t))n++;}
+  if(n>=.4*o.X*o.Z)top=y;else break;}return top;}
+function applyExcl(B){
+  const o=B.orig,ex=B.excl,out=[],keep=[];let lo=-1,hi=-1;
+  for(let y=0;y<o.Y;y++)for(let z=0;z<o.Z;z++)for(let x=0;x<o.X;x++){const t=o.arr[(y*o.Z+z)*o.X+x];if(!t)continue;
+    if(ex.size&&ex.has(matKey(t))){out.push({x,z,id:t});continue;}
+    keep.push([x,y,z,t]);if(lo<0)lo=y;hi=y;}
+  if(!keep.length)return false;
+  const X=o.X,Z=o.Z,Y=hi-lo+1,arr=new Array(X*Y*Z).fill(null),layers=[...Array(Y)].map(()=>[]);
+  for(const[x,y,z,t]of keep){arr[((y-lo)*Z+z)*X+x]=t;layers[y-lo].push({x,z,t});}
+  for(const L of layers)L.sort((p,q)=>p.z-q.z||p.x-q.x);
+  Object.assign(B,{X,Y,Z,arr,layers,total:keep.length,y0:lo,exclRows:countMats(out)});
+  const g=ex.size?groundTop(o,t=>ex.has(matKey(t))):-1;B.feetAuto=Math.max(0,Math.min(Y-1,g+1-lo));
+  B.feet=B.feetSet!=null?Math.max(0,Math.min(Y-1,B.feetSet)):B.feetAuto;
+  for(const k in VC)if(k.startsWith(B.id+'|'))delete VC[k];
+  return true;
+}
+const terrainKeys=B=>{const ks=new Set();if(B.orig)for(const t of B.orig.arr)if(t){const k=matKey(t);if(TERRAIN.test(k))ks.add(k);}return ks;};
 /* salvataggio delle importazioni nel browser */
 function b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
 function unb64(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 function saveImport(B){
-  const pal=[],map=new Map(),idx=new Uint16Array(B.X*B.Y*B.Z);
-  B.arr.forEach((t,i)=>{if(!t)return;let k=map.get(t);if(k==null){k=pal.length+1;pal.push(t);map.set(t,k);}idx[i]=k;});
+  const o=B.orig,pal=[],map=new Map(),idx=new Uint16Array(o.X*o.Y*o.Z);
+  o.arr.forEach((t,i)=>{if(!t)return;let k=map.get(t);if(k==null){k=pal.length+1;pal.push(t);map.set(t,k);}idx[i]=k;});
   const list=(store.get('bpb-imports')||[]).filter(e=>e.id!==B.id);
-  list.push({id:B.id,name:B.name,file:B.file,dv:B.dv,X:B.X,Y:B.Y,Z:B.Z,pal,data:b64(new Uint8Array(idx.buffer))});
+  list.push({id:B.id,name:B.name,file:B.file,dv:B.dv,X:o.X,Y:o.Y,Z:o.Z,pal,data:b64(new Uint8Array(idx.buffer)),excl:[...B.excl],feet:B.feetSet});
   return store.set('bpb-imports',list);
 }
 function loadImports(){
   for(const e of(store.get('bpb-imports')||[])){try{
     const idx=new Uint16Array(unb64(e.data).buffer),cells=[];
     for(let i=0;i<idx.length;i++)if(idx[i]){const x=i%e.X,z=Math.floor(i/e.X)%e.Z,y=Math.floor(i/(e.X*e.Z));cells.push([x,y,z,e.pal[idx[i]-1]]);}
-    BUILDS.push(buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,cells,e.dv));}catch(err){}}
+    const B=buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,cells,e.dv);
+    if(e.excl&&e.excl.length||e.feet!=null){B.excl=new Set(e.excl||[]);B.feetSet=e.feet!=null?e.feet:null;if(!applyExcl(B)){B.excl=new Set();applyExcl(B);}}
+    BUILDS.push(B);}catch(err){}}
 }
 
 /* ================= scrittura file di struttura ================= */
@@ -1767,8 +1819,10 @@ function dataPack(B,v){
   const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y;
   const W=G+'_x',R=G+'_r'; // fantasma rosso: blocco sbagliato; arancione: blocco giusto ma girato in un altro modo
   // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
-  const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,ACT='scoreboard players set #attivo bpb '+ID;
-  const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick'];
+  const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,US='bpbc'+ID,ACT='scoreboard players set #attivo bpb '+ID;
+  const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick',
+    // accovacciato: la statistica del tempo da accovacciati cresce a ogni tick; la azzeriamo a ogni tick (niente predicati: dalla 26.3 hanno cambiato formato)
+    'scoreboard objectives add '+US+' minecraft.custom:minecraft.sneak_time'];
   const q=t=>JSON.stringify(t);
   const say=(t,col)=>'tellraw @a '+q({text:t,color:col||'green'});
   const name=B.name.replace(/[\u0000-\u001f]/g,' ');
@@ -1815,16 +1869,21 @@ function dataPack(B,v){
       for(let i=1;i<n;i++)F.mancano.push('scoreboard players operation '+MS+' bpb += '+MT+' bpb');}
     F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
   F.load=[...OBJ,say(T('Blocco per Blocco: fantasma di "{0}" pronto. Mettiti dove vuoi costruire e scrivi /function {1}:start',name,ns),'yellow')];
-  F.start=[...OBJ,'kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~ ~ {Tags:['+q(O)+']}','scoreboard players set '+L+' bpb 0',
+  const FEET=Math.max(0,Math.min(Y-1,B.feet|0));
+  F.start=[...OBJ,'kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}','scoreboard players set '+L+' bpb 0',
     say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Con /function {0}:attrezzi ricevi gli oggetti per cambiare livello con il tasto destro.',ns),'yellow'),
+    ...(FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.',FEET),'yellow')]:[]),
     say(T('Materiali per tutta la costruzione: {0}. Elenco completo: /function {1}:materiali',slotText(all),ns),'yellow'),'function '+ns+':show'];
   F.show=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 1',ACT];
   for(let y=0;y<Y;y++)F.show.push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1),
     'execute if score '+L+' bpb matches '+y+' run '+say(T(cnt[y]===1?'{0}: livello {1} di {2}, {3} blocco. Comandi: {4}':'{0}: livello {1} di {2}, {3} blocchi. Comandi: {4}',name,y+1,Y,cnt[y],cmds)),
     'execute if score '+L+' bpb matches '+y+' run function '+ns+':mat/'+(y+1));
   F.show.push('execute store result score '+N+' bpb if entity @e[type=block_display,tag='+G+']','tellraw @a '+q([{text:T('Fantasmi visibili nel mondo: '),color:'gray'},{score:{name:N,objective:'bpb'},color:'gray'}]));
-  F.next=['execute if score '+L+' bpb matches ..'+(Y-2)+' run scoreboard players add '+L+' bpb 1','function '+ns+':show'];
-  F.prev=['execute if score '+L+' bpb matches 1.. run scoreboard players remove '+L+' bpb 1','function '+ns+':show'];
+  // avanti e indietro saltano i livelli rimasti vuoti (per esempio dopo aver escluso il terreno)
+  const NZ=cnt.map((n,y)=>n?y:-1).filter(y=>y>=0),TMP='#'+sl+'_s';
+  const step=(a,b)=>'execute if score '+L+' bpb matches '+a+' run scoreboard players set '+TMP+' bpb '+b;
+  F.next=['scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(0,-1).map((y,i)=>step(y,NZ[i+1])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
+  F.prev=['scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(1).map((y,i)=>step(y,NZ[i])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
   F.all=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT];
   for(let y=0;y<Y;y++)F.all.push('execute at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1));
   F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,ns)));
@@ -1838,11 +1897,11 @@ function dataPack(B,v){
     // clic destro con gli oggetti: una pausa di 8 tick evita di saltare più livelli tenendo premuto il tasto
     'execute if score '+CD+' bpb matches 1.. run scoreboard players remove '+CD+' bpb 1',
     // da accovacciato gli stessi oggetti mostrano i materiali invece di cambiare livello
-    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..},predicate='+ns+':chinato] run function '+ns+':item_mancano',
-    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..},predicate='+ns+':chinato] run function '+ns+':item_materiali',
+    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..,'+US+'=1..}] run function '+ns+':item_mancano',
+    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..,'+US+'=1..}] run function '+ns+':item_materiali',
     'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..}] run function '+ns+':item_next',
     'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..}] run function '+ns+':item_prev',
-    'scoreboard players reset @a '+UA,'scoreboard players reset @a '+UB];
+    'scoreboard players reset @a '+UA,'scoreboard players reset @a '+UB,'scoreboard players reset @a '+US];
   F.item_next=['scoreboard players set '+CD+' bpb 8','function '+ns+':next'];
   F.item_prev=['scoreboard players set '+CD+' bpb 8','function '+ns+':prev'];
   F.item_mancano=['scoreboard players set '+CD+' bpb 20','function '+ns+':mancano'];
@@ -1879,15 +1938,13 @@ function dataPack(B,v){
   // spazi che contano come vuoti: aria, liquidi ed erba o neve che si tolgono da sole quando piazzi un blocco
   const VUOTO={values:['minecraft:air','minecraft:cave_air','minecraft:void_air','minecraft:water','minecraft:lava','minecraft:tall_grass','minecraft:fern','minecraft:large_fern','minecraft:snow','minecraft:seagrass','minecraft:tall_seagrass','minecraft:dead_bush',
     {id:'minecraft:short_grass',required:false},{id:'minecraft:grass',required:false},{id:'minecraft:light',required:false}]};
-  const CHINATO={condition:'minecraft:entity_properties',entity:'this',predicate:{flags:{is_sneaking:true}}};
   const te=new TextEncoder(),files=[];
   const meta={pack:{pack_format:15,supported_formats:{min_inclusive:12,max_inclusive:999},min_format:12,max_format:999,description:T('Blocco per Blocco: fantasma di {0}',name)}};
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
-  for(const[dir,bdir,pdir]of[['functions','blocks','predicates'],['function','block','predicate']]){ // nomi al plurale fino alla 1.20.6, al singolare dalla 1.21
+  for(const[dir,bdir]of[['functions','blocks'],['function','block']]){ // nomi al plurale fino alla 1.20.6, al singolare dalla 1.21
     for(const f in F)files.push({name:'data/'+ns+'/'+dir+'/'+f+'.mcfunction',data:te.encode(F[f].join('\n')+'\n')});
     files.push({name:'data/'+ns+'/tags/'+dir+'/checks.json',data:te.encode(JSON.stringify({values:tagVals}))});
     files.push({name:'data/'+ns+'/tags/'+bdir+'/vuoto.json',data:te.encode(JSON.stringify(VUOTO))});
-    files.push({name:'data/'+ns+'/'+pdir+'/chinato.json',data:te.encode(JSON.stringify(CHINATO))});
     files.push({name:'data/minecraft/tags/'+dir+'/tick.json',data:te.encode(JSON.stringify({values:[ns+':tick']}))});
     files.push({name:'data/minecraft/tags/'+dir+'/load.json',data:te.encode(JSON.stringify({values:[ns+':load']}))});}
   return zip(files);
@@ -1953,11 +2010,13 @@ async function importFile(f){
     const r=parseStructure(root);
     const base=f.name.replace(/\.[^.]+$/,'');
     const B=buildFromCells('imp-'+Date.now().toString(36),(r.meta||base).slice(0,60),f.name,r.X,r.Y,r.Z,r.cells,r.dv);
+    const tk=terrainKeys(B);let terr=0;
+    if(tk.size&&groundTop(B.orig,t=>tk.has(matKey(t)))>=0){B.excl=tk;if(applyExcl(B))terr=B.exclRows.reduce((a,r)=>a+r.n,0);else{B.excl=new Set();applyExcl(B);}}
     BUILDS.push(B);makeCard(B);fillTags();
     const saved=saveImport(B);
     S.cat='Tutte';$('catChips').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c==='Tutte')));
     renderLibrary();selectBuild(B.id);
-    impMsg(T('Importata: {0} ({1} blocchi, {2} livelli).',B.name,B.total,B.Y)+(saved?'':' '+T('Non riesco a salvarla nel browser (file grande o memoria piena): la prossima volta dovrai ricaricarla.')));
+    impMsg(T('Importata: {0} ({1} blocchi, {2} livelli).',B.name,B.total,B.Y)+(terr?' '+T('Ho escluso {0} blocchi di terreno (terra, pietra, minerali): puoi rimetterli dall\'elenco dei materiali.',NUM(terr)):'')+(saved?'':' '+T('Non riesco a salvarla nel browser (file grande o memoria piena): la prossima volta dovrai ricaricarla.')));
   }catch(e){
     const m=String(e&&e.message||e);
     impMsg(m==='notnbt'?T('Questo file non sembra un file di struttura di Minecraft.')
@@ -2028,7 +2087,7 @@ function selectBuild(id,layer){
   $('lvRange').max=B.Y;$('lvTot').textContent=B.Y;
   document.querySelectorAll('.dpcmd').forEach(el=>{el.textContent='/function '+dpNs(B)+':'+el.dataset.f;});
   $('rmImp').hidden=!B.imported;$('rmImp').textContent=T('Rimuovi questo file dalla libreria');rmArmed=false;
-  renderStyle();renderView();if(T3)frame3D('iso');renderGrid();renderStep();renderMats();renderLayers();notifyRemote();
+  renderStyle();renderView();if(T3)frame3D('iso');renderGrid();renderStep();renderMats();renderLayers();renderFeet();notifyRemote();
 }
 function setLayer(n){const B=S.B;const nl=Math.max(0,Math.min(B.Y-1,n));if(nl===S.layer)return;S.layer=nl;S.hover=null;store.set('bpb-layer-'+B.id,S.layer);
   renderView();renderGrid();renderStep();renderMats();renderLayers();notifyRemote();}
@@ -2120,9 +2179,43 @@ function renderMats(){
   rows.forEach(r=>{const li=document.createElement('li');
     li.innerHTML='<img alt=""><span class="m-name"></span><span class="m-count"><b></b><small></small></span>';
     li.querySelector('img').src=icon(r.id);li.querySelector('.m-name').textContent=r.d.name;
-    li.querySelector('b').textContent=r.n;li.querySelector('small').textContent=stacks(r.n,r.d);ul.appendChild(li);});
+    li.querySelector('b').textContent=r.n;li.querySelector('small').textContent=stacks(r.n,r.d);
+    if(B.imported){li.classList.add('can-x');const x=document.createElement('button');x.type='button';x.className='m-x';x.textContent=T('Escludi');
+      x.title=T('Escludi {0}: niente fantasma e non conta nei materiali',r.d.name);x.setAttribute('aria-label',x.title);
+      const k=matKey(r.id);x.addEventListener('click',()=>{const ex=new Set(B.excl);ex.add(k);setExcl(ex);});li.appendChild(x);}
+    ul.appendChild(li);});
   $('matExtra').textContent=S.tab==='total'?B.extra:'';$('matExtra').hidden=!(S.tab==='total'&&B.extra);
+  renderExcl();
 }
+function renderExcl(msg){
+  const B=S.B,box=$('exclBox');box.innerHTML='';
+  if(!B.imported){box.hidden=true;return;}
+  if(B.excl.size){
+    const p=document.createElement('p');const n=B.exclRows.reduce((a,r)=>a+r.n,0);
+    p.textContent=T('Esclusi, senza fantasma e non contati ({0} blocchi). Tocca per rimetterli:',NUM(n));box.appendChild(p);
+    for(const r of B.exclRows){const nm=getDef(r.id).name,b=document.createElement('button');b.type='button';b.textContent=nm+' · '+NUM(r.n);
+      b.setAttribute('aria-label',T('Rimetti {0}',nm));const k=matKey(r.id);
+      b.addEventListener('click',()=>{const ex=new Set(B.excl);ex.delete(k);setExcl(ex);});box.appendChild(b);}
+    const all=document.createElement('button');all.type='button';all.textContent=T('Rimetti tutto');all.addEventListener('click',()=>setExcl(new Set()));box.appendChild(all);
+  }else{const tk=terrainKeys(B);
+    if(!tk.size&&!msg){box.hidden=true;return;}
+    if(tk.size){const p=document.createElement('p');p.textContent=T('Questo file contiene blocchi di terreno (terra, pietra, minerali). Se non fanno parte della costruzione, escludili: spariscono dai fantasmi e dai materiali.');box.appendChild(p);
+      const b=document.createElement('button');b.type='button';b.textContent=T('Escludi il terreno');b.addEventListener('click',()=>setExcl(tk));box.appendChild(b);}}
+  if(msg){const m=document.createElement('p');m.className='msg';m.textContent=msg;box.appendChild(m);}
+  box.hidden=false;
+}
+function setExcl(ex){
+  const B=S.B,old=B.excl;B.excl=ex;B.feetSet=null;
+  if(!applyExcl(B)){B.excl=old;applyExcl(B);renderExcl(T('Non posso escludere tutto: la costruzione resterebbe vuota.'));return;}
+  store.del('bpb-done-'+B.id);store.del('bpb-layer-'+B.id);saveImport(B);cardText(B);drawThumb(B);selectBuild(B.id,0);
+}
+function renderFeet(){const B=S.B,row=$('feetRow');
+  if(!B.imported||!(B.excl.size||B.feet)){row.hidden=true;return;}
+  row.hidden=false;$('feetIn').max=B.Y-1;$('feetIn').value=B.feet;
+  $('feetTxt').textContent=B.feet?T(B.feet===1?'Il livello 1 è sotto il terreno: nel gioco mettiti sopra il terreno e il fantasma compare un blocco sotto i tuoi piedi.':'I primi {0} livelli sono sotto il terreno: nel gioco mettiti sopra il terreno e il fantasma del livello 1 compare {0} blocchi sotto i tuoi piedi.',B.feet)
+    :T('La costruzione parte dal livello dei tuoi piedi. Se una parte va sotto terra, indica quanti livelli.');}
+$('feetIn').addEventListener('change',()=>{const B=S.B;let n=parseInt($('feetIn').value,10);if(!(n>=0))n=0;n=Math.min(B.Y-1,n);
+  B.feetSet=n;B.feet=n;saveImport(B);renderFeet();});
 function renderLayers(){
   const B=S.B,ol=$('layerList');ol.innerHTML='';
   for(let y=0;y<B.Y;y++){const li=document.createElement('li');li.className=(y===S.layer?'cur ':'')+(done.has(y)?'is-done':'');
