@@ -349,8 +349,10 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
             <li>Mettiti dove vuoi l'angolo della costruzione: parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Premi F3 per vedere la direzione.</li>
             <li>Scrivi <code class="dpcmd" data-f="start"></code>: compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso.</li>
             <li>Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
+            <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
+            <li>Per i materiali: <code class="dpcmd" data-f="materiali"></code> elenca tutto quello che serve per la costruzione, con i posti nell'inventario, e <code class="dpcmd" data-f="mancano"></code> quello che manca ancora nel fantasma acceso. A ogni cambio di livello la chat ti dice cosa serve per quel livello. I nomi dei blocchi sono nella lingua del gioco.</li>
             <li>Cambia livello con <code class="dpcmd" data-f="next"></code> e <code class="dpcmd" data-f="prev"></code>. Con <code class="dpcmd" data-f="all"></code> vedi tutto e con <code class="dpcmd" data-f="show"></code> torni al livello a cui eri. Con <code class="dpcmd" data-f="clear"></code> togli il fantasma.</li>
-            <li>Per non scrivere comandi, usa <code class="dpcmd" data-f="attrezzi"></code>: ricevi una carota su un bastone (livello avanti) e un fungo distorto su un bastone (livello indietro), da usare con il tasto destro. Comandano il fantasma acceso per ultimo.</li>
+            <li>Per non scrivere comandi, usa <code class="dpcmd" data-f="attrezzi"></code>: ricevi una carota su un bastone (livello avanti) e un fungo distorto su un bastone (livello indietro), da usare con il tasto destro. Da accovacciato, la carota ti dice cosa manca e il fungo ti dà l'elenco completo dei materiali. Comandano il fantasma acceso per ultimo.</li>
           </ol>
           <p>Servono i comandi attivi (trucchi in singolo giocatore, o operatore su un server) e Minecraft Java dalla 1.19.4 in poi.</p>
         </details>
@@ -523,7 +525,7 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "torni al livello a cui eri. Con": "to go back to the layer you were on. Use",
 "togli il fantasma.": "to remove the ghost.",
 "Per non scrivere comandi, usa": "To avoid typing commands, use",
-": ricevi una carota su un bastone (livello avanti) e un fungo distorto su un bastone (livello indietro), da usare con il tasto destro. Comandano il fantasma acceso per ultimo.": ": you get a carrot on a stick (next layer) and a warped fungus on a stick (previous layer), used with right-click. They control the ghost you turned on last.",
+": ricevi una carota su un bastone (livello avanti) e un fungo distorto su un bastone (livello indietro), da usare con il tasto destro. Da accovacciato, la carota ti dice cosa manca e il fungo ti dà l'elenco completo dei materiali. Comandano il fantasma acceso per ultimo.": ": you get a carrot on a stick (next layer) and a warped fungus on a stick (previous layer), to use with right-click. While sneaking, the carrot tells you what is missing and the fungus gives you the full materials list. They control the ghost you turned on last.",
 "Servono i comandi attivi (trucchi in singolo giocatore, o operatore su un server) e Minecraft Java dalla 1.19.4 in poi.": "You need commands enabled (cheats in single player, or operator on a server) and Minecraft Java 1.19.4 or later.",
 "Rimuovi questo file dalla libreria": "Remove this file from the library",
 "Vista 3D": "3D view",
@@ -731,7 +733,26 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Progetto amatoriale, fatto con l'intelligenza artificiale per puro divertimento e hobby.": "A hobby project, made with artificial intelligence just for fun.",
 "Blocco per Blocco è un progetto amatoriale, creato con l'aiuto dell'intelligenza artificiale per puro divertimento e hobby. È gratuito e open source (licenza MIT). Non raccoglie dati: file importati, texture e progressi restano nel tuo browser. Il telecomando usa il server pubblico gratuito di PeerJS solo per mettere in contatto i due dispositivi.": "Blocco per Blocco is a hobby project, made with the help of artificial intelligence just for fun. It is free and open source (MIT licence). It collects no data: imported files, textures and progress stay in your browser. The remote uses the free public PeerJS server only to connect the two devices.",
 "Il progetto è fornito così com'è, senza garanzie di alcun tipo. L'autore non è responsabile di usi impropri, di danni o di problemi derivanti dal suo utilizzo, compresi danni ai mondi di gioco: fai sempre una copia di backup del mondo prima di aggiungere un data pack.": "The project is provided as is, without warranty of any kind. The author is not responsible for misuse, damage or problems arising from its use, including damage to game worlds: always back up your world before adding a data pack.",
-"NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Non è un prodotto ufficiale di Minecraft e non è approvato né associato a Mojang o Microsoft. Minecraft, il suo nome, il marchio e i contenuti del gioco appartengono a Mojang AB e Microsoft: tutti i diritti su di essi restano loro. Questo progetto non contiene texture né altri contenuti del gioco: se vuoi, l'app legge le texture dal file del gioco che possiedi, solo nel tuo browser.": "NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Minecraft, its name, brand and game content belong to Mojang AB and Microsoft, who keep all rights to them. This project contains no textures or other game content: if you want, the app reads the textures from the game file you own, only in your browser."
+"NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Non è un prodotto ufficiale di Minecraft e non è approvato né associato a Mojang o Microsoft. Minecraft, il suo nome, il marchio e i contenuti del gioco appartengono a Mojang AB e Microsoft: tutti i diritti su di essi restano loro. Questo progetto non contiene texture né altri contenuti del gioco: se vuoi, l'app legge le texture dal file del gioco che possiedi, solo nel tuo browser.": "NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Minecraft, its name, brand and game content belong to Mojang AB and Microsoft, who keep all rights to them. This project contains no textures or other game content: if you want, the app reads the textures from the game file you own, only in your browser.",
+"Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.": "If you place the wrong block the ghost turns red and the bottom of the screen tells you which block goes there. If the block is right but turned a different way, for example upside-down stairs or a log lying on its side, the ghost turns orange. Remove the block and the ghost goes back to normal.",
+"Per i materiali:": "For materials:",
+"elenca tutto quello che serve per la costruzione, con i posti nell'inventario, e": "lists everything the build needs, with inventory slots, and",
+"quello che manca ancora nel fantasma acceso. A ogni cambio di livello la chat ti dice cosa serve per quel livello. I nomi dei blocchi sono nella lingua del gioco.": "what is still missing in the ghost shown. Each time you change layer, the chat tells you what that layer needs. Block names are in the game's language.",
+"{0} posto nell'inventario": "{0} inventory slot",
+"{0} posti nell'inventario": "{0} inventory slots",
+"{0} posti nell'inventario, circa {1} bauli doppi": "{0} inventory slots, about {1} double chests",
+"Per questo livello servono: ": "This layer needs: ",
+" e altri {0} (/function {1}:mancano)": " and {0} more (/function {1}:mancano)",
+"Materiali per tutta la costruzione \"{0}\" ({1}):": "Materials for the whole build \"{0}\" ({1}):",
+"Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.": "Nothing missing: no ghost left to complete. /function {0}:next goes to the next layer, :show brings back this layer's ghost.",
+"Ti mancano ancora, per il fantasma acceso:": "Still missing for the ghost shown:",
+"Materiali per tutta la costruzione: {0}. Elenco completo: /function {1}:materiali": "Materials for the whole build: {0}. Full list: /function {1}:materiali",
+"Da accovacciato: la carota ti dice cosa manca nel livello, il fungo l'elenco dei materiali di tutta la costruzione.": "While sneaking: the carrot tells you what is missing in the layer, the fungus lists the materials for the whole build.",
+"Fantasmi arancioni rimasti: ": "Orange ghosts left: ",
+" (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.": " (right blocks turned a different way). You can fix them or move on.",
+"Blocco sbagliato: qui va ": "Wrong block: this spot needs ",
+"Blocco giusto ma girato in un altro modo: ": "Right block, turned a different way: ",
+". Guarda il modello 3D nell'app.": ". Check the 3D model in the app."
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -989,6 +1010,7 @@ function xDef(id){
   if(bar>=0&&body.length>bar+1)body.slice(bar+1).split(',').forEach(kv=>{const i=kv.indexOf('=');if(i>0)P[kv.slice(0,i)]=kv.slice(i+1);});
   const b=name.includes(':')?name.split(':').pop():name,k=xKind(b);
   const d={name:ITN[b]||pretty(b),mc:name,props:P};
+  if(/_sign$|_banner$|^snowball$|egg$|^armor_stand$/.test(b))d.stk=16;else if(/_bed$|^cake$/.test(b))d.stk=1;
   if(k==='glass'||k==='water')d.clear=true;if(k==='leaves'){d.clear=true;d.cut=true;}if(k==='water'){d.bucket=true;d.boxes=[[0,1,0,.875,0,1]];}
   const side='x.'+b,top='xt.'+b;
   if(b==='grass_block')d.tex=[top,'dirt',side,side,side,side];
@@ -1479,7 +1501,9 @@ const $=s=>document.getElementById(s);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function rgba(hex,a){hex=(hex||'#888').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
-const stacks=(n,d)=>d.bucket?(n===1?T('{0} secchio',n):T('{0} secchi',n)):n<64?'':(Math.floor(n/64)+' × 64'+(n%64?' + '+n%64:''));
+const stkOf=d=>d.bucket?1:d.stk||64;
+const stacks=(n,d)=>{if(d.bucket)return n===1?T('{0} secchio',n):T('{0} secchi',n);const s=stkOf(d);return n<s||s===1?'':(Math.floor(n/s)+' × '+s+(n%s?' + '+n%s:''));};
+const slotsOf=rows=>rows.reduce((a,r)=>a+Math.ceil(r.n/stkOf(r.d)),0);
 const slug=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'struttura';
 const S={B:null,st:null,layer:0,rot:2,mode:'upto',tab:'layer',hover:null,cat:'Tutte',tag:'Tutti',q:''};
 let done=new Set();
@@ -1740,31 +1764,64 @@ function exportLitematic(v,name,dv){
 /* Data pack vanilla: fantasma di un livello alla volta fatto di block display; sparisce quando piazzi il blocco giusto */
 const dpNs=B=>'bpb_'+(slug((B.it&&B.it.name)||B.name).slice(0,24)||'struttura');
 function dataPack(B,v){
-  const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',Y=v.Y;
+  const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y;
+  const W=G+'_x',R=G+'_r'; // fantasma rosso: blocco sbagliato; arancione: blocco giusto ma girato in un altro modo
   // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
   const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,ACT='scoreboard players set #attivo bpb '+ID;
   const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick'];
   const q=t=>JSON.stringify(t);
   const say=(t,col)=>'tellraw @a '+q({text:t,color:col||'green'});
   const name=B.name.replace(/[\u0000-\u001f]/g,' ');
-  const F={},kinds=new Map(),snbt=st=>{const pk=Object.keys(st.p),pp=pk.map(k=>k+':'+q(String(st.p[k]))).join(',');
+  const F={},kinds=new Map(),KINF=[],snbt=st=>{const pk=Object.keys(st.p),pp=pk.map(k=>k+':'+q(String(st.p[k]))).join(',');
     // fino alla 26.2 il gioco legge Name/Properties, dalla 26.3 id/properties: li scriviamo entrambi, ogni versione ignora quelli che non conosce
     return'{Name:'+q(st.n)+(pk.length?',Properties:{'+pp+'}':'')+',id:'+q(st.n)+(pk.length?',properties:{'+pp+'}':'')+'}';};
+  // nome del blocco nella lingua del gioco, con il nome dell'app se la traduzione manca (blocchi di mod)
+  const NOV={get:()=>null};
+  const ITK={water:'item.minecraft.water_bucket',lava:'item.minecraft.lava_bucket',redstone_wire:'item.minecraft.redstone',wheat:'item.minecraft.wheat_seeds',carrots:'item.minecraft.carrot',potatoes:'item.minecraft.potato',beetroots:'item.minecraft.beetroot_seeds',tripwire:'item.minecraft.string',cocoa:'item.minecraft.cocoa_beans',sweet_berry_bush:'item.minecraft.sweet_berries'};
+  const tkOf=mc=>{const i=mc.indexOf(':'),nsp=i<0?'minecraft':mc.slice(0,i),p=mc.slice(i+1);return(nsp==='minecraft'&&ITK[p])||'block.'+nsp+'.'+p;};
+  const tr=(mc,fb,col)=>({translate:tkOf(mc),fallback:fb,color:col||'aqua'});
+  const ORI=['facing','half','axis','face'];
+  // materiali: stessi gruppi dell'elenco nell'app
+  const all=countMats(v.layers.flat()),gi=new Map(),grp=all.map((r,j)=>{gi.set(r.d.name,j);const st=mcState(r.id,NOV,0,0,0);return{j,r,mc:st.n,mul:new Set()};});
   const cnt=[];
   for(let y=0;y<Y;y++){const L2=[];
     for(const c of v.layers[y]){const st=mcState(c.id,v,c.x,y,c.z);let show=st;
       if(st.n==='minecraft:water'||st.n==='minecraft:bubble_column')show={n:'minecraft:light_blue_stained_glass',p:{}};
       else if(st.n==='minecraft:lava')show={n:'minecraft:orange_stained_glass',p:{}};
-      const chk=st.n==='minecraft:bubble_column'?'minecraft:water':st.n;let k=kinds.get(chk);if(k==null){k=kinds.size;kinds.set(chk,k);}
-      L2.push('summon block_display ~'+c.x+' ~'+y+' ~'+c.z+' {block_state:'+snbt(show)+',transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.25f,0.25f,0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b,Tags:['+q(G)+','+q(G+'_'+k)+']}');}
+      const base=st.n==='minecraft:bubble_column'?'minecraft:water':st.n;
+      const op=Object.keys(st.p).filter(k=>ORI.includes(k)||(k==='type'&&/_slab$/.test(base))).sort();
+      const exact=base+(op.length?'['+op.map(k=>k+'='+st.p[k]).join(',')+']':'');
+      const m=matOf(c.id);let k=kinds.get(exact);if(k==null){k=kinds.size;kinds.set(exact,k);KINF[k]={base,exact,item:mcState(m.d.id,NOV,0,0,0).n,fb:m.d.name};}
+      const tags=[G,G+'_'+k];
+      if(m.n){const g=grp[gi.get(m.d.name)];tags.push(G+'_m'+g.j);if(m.n>1){tags.push(G+'_m'+g.j+'_'+m.n);g.mul.add(m.n);}}
+      L2.push('summon block_display ~'+c.x+' ~'+y+' ~'+c.z+' {block_state:'+snbt(show)+',transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.25f,0.25f,0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b,Tags:['+tags.map(q).join(',')+']}');}
     F['layer/'+(y+1)]=L2;cnt.push(L2.length);}
-  const cmds='/function '+ns+':next, :prev, :all, :clear';
+  const cmds='/function '+ns+':next, :prev, :all, :clear, :materiali, :mancano';
+  // elenco breve dei materiali di un livello, su una riga
+  const MAXL=12;
+  for(let y=0;y<Y;y++){const rows=countMats(v.layers[y]);if(!rows.length){F['mat/'+(y+1)]=[];continue;}
+    const parts=[{text:T('Per questo livello servono: '),color:'gray'}];
+    rows.slice(0,MAXL).forEach((r,i)=>{if(i)parts.push({text:', ',color:'gray'});parts.push({text:r.n+' ',color:'white'},tr(grp[gi.get(r.d.name)].mc,r.d.name));});
+    if(rows.length>MAXL)parts.push({text:T(' e altri {0} (/function {1}:mancano)',rows.length-MAXL,ns),color:'gray'});
+    F['mat/'+(y+1)]=['tellraw @a '+q(parts)];}
+  F.materiali=['tellraw @a '+q({text:T('Materiali per tutta la costruzione "{0}" ({1}):',name,slotText(all)),color:'gold'})];
+  for(const g of grp){const st=stacks(g.r.n,g.r.d);F.materiali.push('tellraw @a '+q([{text:' • '+g.r.n+' ',color:'white'},tr(g.mc,g.r.d.name),...(st?[{text:'  ('+st+')',color:'gray'}]:[])]));}
+  // cosa manca davvero adesso: conta i fantasmi ancora accesi di ogni materiale (gli arancioni hanno già il blocco giusto)
+  F.mancano=['execute unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.',ns),'yellow'),
+    'execute if entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
+  for(const g of grp){const sel='@e[type=block_display,tag='+G+'_m'+g.j+',tag=!'+R+']';
+    F.mancano.push('execute store result score '+MS+' bpb if entity '+sel);
+    for(const n of g.mul){F.mancano.push('execute store result score '+MT+' bpb if entity @e[type=block_display,tag='+G+'_m'+g.j+'_'+n+',tag=!'+R+']');
+      for(let i=1;i<n;i++)F.mancano.push('scoreboard players operation '+MS+' bpb += '+MT+' bpb');}
+    F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
   F.load=[...OBJ,say(T('Blocco per Blocco: fantasma di "{0}" pronto. Mettiti dove vuoi costruire e scrivi /function {1}:start',name,ns),'yellow')];
   F.start=[...OBJ,'kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~ ~ {Tags:['+q(O)+']}','scoreboard players set '+L+' bpb 0',
-    say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Con /function {0}:attrezzi ricevi gli oggetti per cambiare livello con il tasto destro.',ns),'yellow'),'function '+ns+':show'];
+    say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Con /function {0}:attrezzi ricevi gli oggetti per cambiare livello con il tasto destro.',ns),'yellow'),
+    say(T('Materiali per tutta la costruzione: {0}. Elenco completo: /function {1}:materiali',slotText(all),ns),'yellow'),'function '+ns+':show'];
   F.show=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 1',ACT];
   for(let y=0;y<Y;y++)F.show.push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1),
-    'execute if score '+L+' bpb matches '+y+' run '+say(T(cnt[y]===1?'{0}: livello {1} di {2}, {3} blocco. Comandi: {4}':'{0}: livello {1} di {2}, {3} blocchi. Comandi: {4}',name,y+1,Y,cnt[y],cmds)));
+    'execute if score '+L+' bpb matches '+y+' run '+say(T(cnt[y]===1?'{0}: livello {1} di {2}, {3} blocco. Comandi: {4}':'{0}: livello {1} di {2}, {3} blocchi. Comandi: {4}',name,y+1,Y,cnt[y],cmds)),
+    'execute if score '+L+' bpb matches '+y+' run function '+ns+':mat/'+(y+1));
   F.show.push('execute store result score '+N+' bpb if entity @e[type=block_display,tag='+G+']','tellraw @a '+q([{text:T('Fantasmi visibili nel mondo: '),color:'gray'},{score:{name:N,objective:'bpb'},color:'gray'}]));
   F.next=['execute if score '+L+' bpb matches ..'+(Y-2)+' run scoreboard players add '+L+' bpb 1','function '+ns+':show'];
   F.prev=['execute if score '+L+' bpb matches 1.. run scoreboard players remove '+L+' bpb 1','function '+ns+':show'];
@@ -1773,32 +1830,64 @@ function dataPack(B,v){
   F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,ns)));
   F.clear=['kill @e[type=block_display,tag='+G+']','kill @e[type=marker,tag='+O+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',say(T('Fantasma di "{0}" rimosso.',name),'yellow')];
   F.tick=['execute if score '+ON+' bpb matches 1.. run function #'+ns+':checks',
-    'execute if score '+ON+' bpb matches 1 unless entity @e[type=block_display,tag='+G+',limit=1] run function '+ns+':done',
+    // tolto il blocco sbagliato, il fantasma torna normale
+    'execute as @e[type=block_display,tag='+W+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
+    'execute as @e[type=block_display,tag='+R+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
+    // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente) o nessuno
+    'execute if score '+ON+' bpb matches 1 unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run function '+ns+':done',
     // clic destro con gli oggetti: una pausa di 8 tick evita di saltare più livelli tenendo premuto il tasto
     'execute if score '+CD+' bpb matches 1.. run scoreboard players remove '+CD+' bpb 1',
+    // da accovacciato gli stessi oggetti mostrano i materiali invece di cambiare livello
+    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..},predicate='+ns+':chinato] run function '+ns+':item_mancano',
+    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..},predicate='+ns+':chinato] run function '+ns+':item_materiali',
     'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..}] run function '+ns+':item_next',
     'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..}] run function '+ns+':item_prev',
     'scoreboard players reset @a '+UA,'scoreboard players reset @a '+UB];
   F.item_next=['scoreboard players set '+CD+' bpb 8','function '+ns+':next'];
   F.item_prev=['scoreboard players set '+CD+' bpb 8','function '+ns+':prev'];
+  F.item_mancano=['scoreboard players set '+CD+' bpb 20','function '+ns+':mancano'];
+  F.item_materiali=['scoreboard players set '+CD+' bpb 20','function '+ns+':materiali'];
   F.attrezzi=[...OBJ,'give @s minecraft:carrot_on_a_stick','give @s minecraft:warped_fungus_on_a_stick',
-    say(T('Tasto destro con la carota su un bastone: livello avanti. Con il fungo distorto su un bastone: livello indietro. Comandano il fantasma che hai acceso per ultimo.'),'yellow')];
-  F.done=['scoreboard players set '+ON+' bpb 0',
+    say(T('Tasto destro con la carota su un bastone: livello avanti. Con il fungo distorto su un bastone: livello indietro. Comandano il fantasma che hai acceso per ultimo.'),'yellow'),
+    say(T('Da accovacciato: la carota ti dice cosa manca nel livello, il fungo l\'elenco dei materiali di tutta la costruzione.'),'yellow')];
+  F.done=['scoreboard players set '+ON+' bpb 3',
+    'execute store result score '+N+' bpb if entity @e[type=block_display,tag='+R+']',
+    'execute if score '+N+' bpb matches 1.. run tellraw @a '+q([{text:T('Fantasmi arancioni rimasti: '),color:'gold'},{score:{name:N,objective:'bpb'},color:'gold'},{text:T(' (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.'),color:'gold'}]),
     'execute if score '+L+' bpb matches ..'+(Y-2)+' run '+say(T('Livello completato! Scrivi /function {0}:next per il prossimo.',ns),'gold'),
     'execute if score '+L+' bpb matches '+(Y-1)+' run '+say(T('Costruzione finita: "{0}" è completa!',name),'gold')];
+  F.libero=['tag @s remove '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:-1}'];
   const tagVals=[];
   const FLUID=new Set(['minecraft:water','minecraft:lava']);
-  for(const[id,k]of kinds){
-    // per acqua e lava basta che lo spazio non sia più vuoto: il secchio può lasciare acqua corrente o un blocco riempito d'acqua
-    F['check/'+k]=FLUID.has(id)?['execute as @e[type=block_display,tag='+G+'_'+k+'] at @s unless block ~ ~ ~ minecraft:air unless block ~ ~ ~ minecraft:cave_air run kill @s']
-      :['execute as @e[type=block_display,tag='+G+'_'+k+'] at @s if block ~ ~ ~ '+id+' run kill @s'];
-    tagVals.push({id:ns+':check/'+k,required:false});}
+  const RENB={'minecraft:chain':'minecraft:iron_chain','minecraft:iron_chain':'minecraft:chain','minecraft:grass':'minecraft:short_grass','minecraft:short_grass':'minecraft:grass'};
+  for(const[exact,k]of kinds){const kf=KINF[k],gs='@e[type=block_display,tag='+G+'_'+k;
+    if(FLUID.has(kf.base)){
+      // per acqua e lava basta che lo spazio non sia più vuoto: il secchio può lasciare acqua corrente o un blocco riempito d'acqua
+      F['check/'+k]=['execute as '+gs+'] at @s unless block ~ ~ ~ minecraft:air unless block ~ ~ ~ minecraft:cave_air run kill @s'];}
+    else{
+      F['check/'+k]=['execute as '+gs+'] at @s if block ~ ~ ~ '+exact+' run kill @s',
+        'execute as '+gs+',tag=!'+W+'] at @s unless block ~ ~ ~ '+kf.base+' unless block ~ ~ ~ #'+ns+':vuoto run function '+ns+':sbagliato/'+k];
+      F['sbagliato/'+k]=['tag @s add '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:16711680}',
+        'title @p actionbar '+q([{text:T('Blocco sbagliato: qui va '),color:'red'},tr(kf.item,kf.fb,'yellow')]),
+        'playsound minecraft:block.note_block.bass master @p ~ ~ ~ 0.8 0.6'];
+      if(exact!==kf.base){
+        F['check/'+k].push('execute as '+gs+',tag=!'+R+'] at @s if block ~ ~ ~ '+kf.base+' run function '+ns+':girato/'+k);
+        F['girato/'+k]=['tag @s add '+R,'tag @s remove '+W,'data merge entity @s {glow_color_override:16753920}',
+          'title @p actionbar '+q([{text:T('Blocco giusto ma girato in un altro modo: '),color:'gold'},tr(kf.item,kf.fb,'yellow'),{text:T('. Guarda il modello 3D nell\'app.'),color:'gold'}])];}}
+    tagVals.push({id:ns+':check/'+k,required:false});
+    // blocchi rinominati tra una versione e l'altra: un secondo controllo con l'altro nome; la versione che non lo conosce lo salta
+    const alt=RENB[kf.base];if(alt){F['check/'+k+'_alt']=['execute as '+gs+'] at @s if block ~ ~ ~ '+alt+exact.slice(kf.base.length)+' run kill @s'];tagVals.push({id:ns+':check/'+k+'_alt',required:false});}}
+  // spazi che contano come vuoti: aria, liquidi ed erba o neve che si tolgono da sole quando piazzi un blocco
+  const VUOTO={values:['minecraft:air','minecraft:cave_air','minecraft:void_air','minecraft:water','minecraft:lava','minecraft:tall_grass','minecraft:fern','minecraft:large_fern','minecraft:snow','minecraft:seagrass','minecraft:tall_seagrass','minecraft:dead_bush',
+    {id:'minecraft:short_grass',required:false},{id:'minecraft:grass',required:false},{id:'minecraft:light',required:false}]};
+  const CHINATO={condition:'minecraft:entity_properties',entity:'this',predicate:{flags:{is_sneaking:true}}};
   const te=new TextEncoder(),files=[];
   const meta={pack:{pack_format:15,supported_formats:{min_inclusive:12,max_inclusive:999},min_format:12,max_format:999,description:T('Blocco per Blocco: fantasma di {0}',name)}};
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
-  for(const dir of['functions','function']){ // "functions" fino alla 1.20.6, "function" dalla 1.21
+  for(const[dir,bdir,pdir]of[['functions','blocks','predicates'],['function','block','predicate']]){ // nomi al plurale fino alla 1.20.6, al singolare dalla 1.21
     for(const f in F)files.push({name:'data/'+ns+'/'+dir+'/'+f+'.mcfunction',data:te.encode(F[f].join('\n')+'\n')});
     files.push({name:'data/'+ns+'/tags/'+dir+'/checks.json',data:te.encode(JSON.stringify({values:tagVals}))});
+    files.push({name:'data/'+ns+'/tags/'+bdir+'/vuoto.json',data:te.encode(JSON.stringify(VUOTO))});
+    files.push({name:'data/'+ns+'/'+pdir+'/chinato.json',data:te.encode(JSON.stringify(CHINATO))});
     files.push({name:'data/minecraft/tags/'+dir+'/tick.json',data:te.encode(JSON.stringify({values:[ns+':tick']}))});
     files.push({name:'data/minecraft/tags/'+dir+'/load.json',data:te.encode(JSON.stringify({values:[ns+':load']}))});}
   return zip(files);
@@ -2008,12 +2097,25 @@ function renderStep(){
   $('lvDone').checked=done.has(S.layer);
   const n=B.layers[S.layer].length;$('lvCount').textContent=T(n===1?'{0} blocco in questo livello':'{0} blocchi in questo livello',n);
 }
-function countMats(list){const cnt=new Map();list.forEach(c=>{const d=getDef(c.id);const e=cnt.get(d.name)||{n:0,id:c.id,d};e.n++;cnt.set(d.name,e);});return[...cnt.values()].sort((p,q)=>q.n-p.n);}
+/* I materiali sono gli oggetti da avere nell'inventario: la metà alta di porte, letti e piante alte arriva da sola,
+   una lastra doppia sono due lastre, una torcia a muro è una torcia */
+const NOITEM=/^(piston_head|fire|soul_fire|nether_portal|end_portal|end_gateway|frosted_ice)$/;
+const ITEMREN=[[/wall_torch$/,'torch'],[/_wall_hanging_sign$/,'_hanging_sign'],[/_wall_sign$/,'_sign'],[/_wall_banner$/,'_banner'],[/_wall_(head|skull)$/,'_$1'],[/_coral_wall_fan$/,'_coral_fan'],[/^bubble_column$/,'water'],[/^tall_seagrass$/,'seagrass']];
+function matOf(id){
+  const d0=getDef(id);if(!id.startsWith('x:'))return{d:d0,n:1};
+  const full=d0.mc,cut=full.lastIndexOf(':')+1,b=full.slice(cut),P=d0.props||{};
+  if((/_door$/.test(b)||TALL.test(b))&&P.half==='upper'||/_bed$/.test(b)&&P.part==='head'||NOITEM.test(b))return{d:d0,n:0};
+  let n=1;if(/_slab$/.test(b)&&P.type==='double')n=2;else{const q=+(P.candles||P.pickles||P.eggs||P.flower_amount||(b==='snow'&&P.layers)||1);if(q>1)n=q;}
+  let b2=b;for(const[re,to]of ITEMREN)b2=b2.replace(re,to);
+  return{d:b2===b?d0:getDef('x:'+full.slice(0,cut)+b2+'|'),n};
+}
+function countMats(list){const cnt=new Map();list.forEach(c=>{const m=matOf(c.id);if(!m.n)return;const e=cnt.get(m.d.name)||{n:0,id:m.d.id,d:m.d};e.n+=m.n;cnt.set(m.d.name,e);});return[...cnt.values()].sort((p,q)=>q.n-p.n);}
+const slotText=rows=>{const s=slotsOf(rows);return s<=36?T(s===1?'{0} posto nell\'inventario':'{0} posti nell\'inventario',s):T('{0} posti nell\'inventario, circa {1} bauli doppi',s,Math.ceil(s/54));};
 function matRows(){const v=V(),list=S.tab==='layer'?v.layers[S.layer]:v.layers.flat();return{list,rows:countMats(list)};}
 function renderMats(){
   const B=S.B,{list,rows}=matRows();
   $('tabLayer').setAttribute('aria-selected',String(S.tab==='layer'));$('tabTotal').setAttribute('aria-selected',String(S.tab==='total'));
-  $('matSummary').textContent=S.tab==='layer'?T('Livello {0}: {1} blocchi',S.layer+1,list.length):T('Tutta la costruzione: {0} blocchi',list.length);
+  $('matSummary').textContent=S.tab==='layer'?T('Livello {0}: {1} blocchi',S.layer+1,list.length):T('Tutta la costruzione: {0} blocchi',list.length)+' · '+slotText(rows);
   const ul=$('mats');ul.innerHTML='';
   rows.forEach(r=>{const li=document.createElement('li');
     li.innerHTML='<img alt=""><span class="m-name"></span><span class="m-count"><b></b><small></small></span>';

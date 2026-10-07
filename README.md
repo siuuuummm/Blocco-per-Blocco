@@ -25,11 +25,13 @@ Il manuale PDF, il file LEGGIMI e i messaggi del data pack in gioco usano la lin
 - **Per ogni costruzione**:
   - modello 3D da ruotare;
   - griglia vista dall'alto per ogni livello;
-  - materiali del livello e totali;
+  - materiali del livello e totali, contati come oggetti da avere (una porta è una porta, non due blocchi) e con i posti nell'inventario;
   - checklist dei livelli.
 - **Manuale PDF** con una pagina per livello.
 - **Esportazione** in `.litematic`, `.schem` e `.nbt`.
 - **Fantasma in gioco senza mod**: un data pack mostra i blocchi del livello come piccoli fantasmi luminosi. Ogni fantasma sparisce quando piazzi il blocco giusto. Si cambia livello con i comandi oppure con il tasto destro tenendo in mano una carota su un bastone (avanti) o un fungo distorto su un bastone (indietro).
+  - Se piazzi il blocco sbagliato il fantasma diventa **rosso** e sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo (una scala al contrario, un tronco coricato) diventa **arancione**.
+  - **Materiali in gioco**: a ogni livello la chat ti dice cosa serve; con un comando vedi l'elenco completo o cosa manca ancora. I nomi dei blocchi sono nella lingua del gioco.
 - **Telecomando dal telefono**: apri la stessa pagina sul telefono, inserisci il codice di 6 cifre mostrato sul PC e cambi livello da lì.
 - **Texture vere** (facoltative): l'app le legge dal file `.jar` del gioco che possiedi o da un resource pack. Le texture non sono incluse nel progetto.
 
@@ -47,7 +49,11 @@ Apri `index.html` in un browser recente: non c'è niente da installare.
    - `:next` e `:prev` cambiano livello;
    - `:all` mostra tutti i livelli insieme;
    - `:show` torna al livello corrente;
-   - `:clear` toglie il fantasma.
+   - `:clear` toglie il fantasma;
+   - `:materiali` elenca i materiali di tutta la costruzione, con i posti nell'inventario;
+   - `:mancano` dice cosa manca ancora nel fantasma acceso.
+
+   Da accovacciato, il tasto destro con la carota equivale a `:mancano` e quello con il fungo a `:materiali`.
 
 Servono i comandi attivi: trucchi attivi in singolo giocatore, oppure permessi da operatore su un server.
 
@@ -113,11 +119,13 @@ The PDF manual, the README file inside the downloads and the in-game data pack m
 - **For every build**:
   - a 3D model you can rotate;
   - a top-down grid for each layer;
-  - materials per layer and in total;
+  - materials per layer and in total, counted as items to carry (a door is one door, not two blocks) and with inventory slots;
   - a layer checklist.
 - **PDF manual** with one page per layer.
 - **Export** to `.litematic`, `.schem` and `.nbt`.
 - **In-game ghost blocks without mods**: a data pack shows the blocks of the current layer as small glowing ghosts. Each ghost disappears when you place the right block. Change layers with commands, or by right-clicking while holding a carrot on a stick (next) or a warped fungus on a stick (previous).
+  - If you place the wrong block the ghost turns **red** and the screen tells you which block goes there. If the block is right but turned a different way (upside-down stairs, a log on its side) it turns **orange**.
+  - **Materials in game**: at each layer the chat tells you what you need; one command shows the full list or what is still missing. Block names are in the game's language.
 - **Phone remote**: open the same page on your phone, enter the 6-digit code shown on your PC and change layers from there.
 - **Real textures** (optional): the app reads them from your own copy of the game's `.jar` file or from a resource pack. No textures are included in the project.
 
@@ -135,7 +143,11 @@ Open `index.html` in a recent browser: there is nothing to install.
    - `:next` and `:prev` change layer;
    - `:all` shows all layers at once;
    - `:show` goes back to the current layer;
-   - `:clear` removes the ghost.
+   - `:clear` removes the ghost;
+   - `:materiali` lists the materials for the whole build, with inventory slots;
+   - `:mancano` tells you what is still missing in the ghost shown.
+
+   While sneaking, right-clicking with the carrot works like `:mancano` and with the fungus like `:materiali`.
 
 The exact `bpb_<name>` is shown in the app after the download and in chat when the pack loads. Commands must be enabled: cheats on in single player, or operator permissions on a server.
 
