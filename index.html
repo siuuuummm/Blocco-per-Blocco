@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Guide gratuite per costruire in Minecraft livello per livello / Free layer-by-layer Minecraft building guides: 3D, grid, materials, PDF manual, export and in-game ghost blocks without mods. Hobby project made with AI.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3a7628">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Blocco per Blocco">
 <title>Blocco per Blocco</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,6 +67,9 @@ input[type=checkbox],input[type=range]{accent-color:var(--grass)}
 .lang button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .brand-mark{width:30px;height:30px;flex:none;background:linear-gradient(var(--grass) 0 34%,var(--dirt) 34%);box-shadow:inset -4px -4px 0 rgba(0,0,0,.18)}
 h1{font-family:var(--f-display);font-weight:700;font-size:clamp(2rem,5vw,3.1rem);line-height:1;letter-spacing:.01em}
+.install{margin-left:auto;font-weight:700;border-color:var(--grass);color:var(--grass);background:transparent}
+.install:hover{background:var(--grass);color:var(--on-grass)}
+.install-msg{margin:6px 0 0;font-size:.85rem;color:var(--muted)}
 .hobby{margin:0;font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dirt)}
 .lede{margin:0;max-width:68ch;color:var(--muted);font-size:1.02rem}
 
@@ -262,7 +272,9 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
 <div class="wrap">
   <header class="top">
     <div class="brand"><span class="brand-mark" aria-hidden="true"></span><h1>Blocco per Blocco</h1>
-      <div class="lang" role="group" aria-label="Lingua"><button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+      <div class="lang" role="group" aria-label="Lingua"><button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+      <button type="button" class="install" id="installBtn" hidden title="Aggiungi Blocco per Blocco al computer o al telefono: si apre in una finestra sua e funziona anche senza internet.">Installa l'app</button></div>
+    <p class="install-msg" id="installMsg" role="status" hidden></p>
     <p class="hobby">Progetto amatoriale, fatto con l'intelligenza artificiale per puro divertimento e hobby.</p>
     <p class="lede">Costruzioni pronte per Minecraft, gratis e un livello alla volta. Scegli un progetto o importa un file di struttura (.schem, .litematic, .nbt): ottieni modello 3D, griglia per ogni livello, lista dei materiali e un manuale PDF da scaricare.</p>
   </header>
@@ -464,6 +476,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
   </main>
 
   <footer>
+    <p id="appVersion"></p>
     <p>Scorciatoie: <kbd>←</kbd> <kbd>→</kbd> cambiano livello, <kbd>R</kbd> ruota la griglia. Livelli spuntati, stili e file importati restano salvati in questo browser.</p>
     <p>Blocco per Blocco è un progetto amatoriale, creato con l'aiuto dell'intelligenza artificiale per puro divertimento e hobby. È gratuito e open source (licenza MIT). Non raccoglie dati: file importati, texture e progressi restano nel tuo browser. Il telecomando usa il server pubblico gratuito di PeerJS solo per mettere in contatto i due dispositivi.</p>
     <p>Il progetto è fornito così com'è, senza garanzie di alcun tipo. L'autore non è responsabile di usi impropri, di danni o di problemi derivanti dal suo utilizzo, compresi danni ai mondi di gioco: fai sempre una copia di backup del mondo prima di aggiungere un data pack.</p>
@@ -778,7 +791,16 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "La costruzione parte dal livello dei tuoi piedi. Se una parte va sotto terra, indica quanti livelli.": "The build starts at the level of your feet. If part of it goes underground, enter how many layers.",
 "Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.": "Layer 1 is underground: it appears one block below your feet, dig there.",
 "I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below your feet, dig there.",
-"Ho escluso {0} blocchi di terreno (terra, pietra, minerali): puoi rimetterli dall'elenco dei materiali.": "I excluded {0} terrain blocks (dirt, stone, ores): you can bring them back from the materials list."
+"Ho escluso {0} blocchi di terreno (terra, pietra, minerali): puoi rimetterli dall'elenco dei materiali.": "I excluded {0} terrain blocks (dirt, stone, ores): you can bring them back from the materials list.",
+"Installa l'app": "Install the app",
+"Aggiungi Blocco per Blocco al computer o al telefono: si apre in una finestra sua e funziona anche senza internet.": "Add Blocco per Blocco to your computer or phone: it opens in its own window and also works offline.",
+"Su iPhone e iPad: tocca il pulsante Condividi di Safari e scegli «Aggiungi alla schermata Home».": "On iPhone and iPad: tap Safari's Share button and choose “Add to Home Screen”.",
+"App installata: la trovi tra le app del computer o nella schermata del telefono.": "App installed: you'll find it among your computer's apps or on your phone's home screen.",
+"Su Firefox per Android: apri il menu (⋮) e scegli «Aggiungi alla schermata Home» oppure «Installa».": "On Firefox for Android: open the menu (⋮) and choose “Add to Home screen” or “Install”.",
+"Firefox per computer per ora non installa i siti come app. Il sito funziona lo stesso anche senza internet dopo la prima visita: aggiungilo ai segnalibri. Per averlo come app con una sua icona usa Chrome, Edge o Chromium.": "Firefox for desktop can't install websites as apps yet. The site still works offline after your first visit: bookmark it. To get it as an app with its own icon, use Chrome, Edge or Chromium.",
+"Cerca nel menu del browser la voce «Installa» o «Aggiungi alla schermata Home».": "Look in your browser's menu for “Install” or “Add to Home screen”.",
+"Aggiornata alla versione {0}. Non serve reinstallare nulla: gli aggiornamenti arrivano da soli.": "Updated to version {0}. No need to reinstall anything: updates arrive by themselves.",
+"Versione {0}": "Version {0}"
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -1728,20 +1750,53 @@ const terrainKeys=B=>{const ks=new Set();if(B.orig)for(const t of B.orig.arr)if(
 /* salvataggio delle importazioni nel browser */
 function b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
 function unb64(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
-function saveImport(B){
+function importEntry(B,bin){
   const o=B.orig,pal=[],map=new Map(),idx=new Uint16Array(o.X*o.Y*o.Z);
   o.arr.forEach((t,i)=>{if(!t)return;let k=map.get(t);if(k==null){k=pal.length+1;pal.push(t);map.set(t,k);}idx[i]=k;});
-  const list=(store.get('bpb-imports')||[]).filter(e=>e.id!==B.id);
-  list.push({id:B.id,name:B.name,file:B.file,dv:B.dv,X:o.X,Y:o.Y,Z:o.Z,pal,data:b64(new Uint8Array(idx.buffer)),excl:[...B.excl],feet:B.feetSet});
-  return store.set('bpb-imports',list);
+  const raw=new Uint8Array(idx.buffer);
+  return{id:B.id,name:B.name,file:B.file,dv:B.dv,X:o.X,Y:o.Y,Z:o.Z,pal,data:bin?raw:b64(raw),excl:[...B.excl],feet:B.feetSet,t:B.t||Date.now()};
 }
+/* le importazioni stanno in IndexedDB, che ha molto più spazio del vecchio salvataggio (pochi MB in tutto);
+   se IndexedDB non c'è (finestra privata, browser bloccato) si torna al salvataggio vecchio */
+function libDb(){return new Promise((res,rej)=>{try{const r=indexedDB.open('bpb-library',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('imports');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+function libTx(mode,fn){return libDb().then(db=>new Promise((res,rej)=>{const tx=db.transaction('imports',mode),st=tx.objectStore('imports');let out;
+  const r=fn(st);if(r)r.onsuccess=()=>{out=r.result;};tx.oncomplete=()=>{db.close();res(out);};tx.onerror=()=>{db.close();rej(tx.error);};tx.onabort=()=>{db.close();rej(tx.error);};}));}
+const libPut=e=>libTx('readwrite',st=>st.put(e,e.id)),libDel=id=>libTx('readwrite',st=>st.delete(id)),libAll=()=>libTx('readonly',st=>st.getAll());
+const legacySave=B=>{const list=(store.get('bpb-imports')||[]).filter(e=>e.id!==B.id);list.push(importEntry(B,false));return store.set('bpb-imports',list);};
+// il salvataggio vecchio non viene cancellato (lo legge ancora una versione precedente del sito aperta nello stesso browser):
+// gli id già copiati in IndexedDB sono segnati in bpb-imports-moved e da lì in poi vale la copia in IndexedDB
+const moved=()=>new Set(store.get('bpb-imports-moved')||[]);
+const markMoved=id=>{const m=moved();if(!m.has(id)){m.add(id);store.set('bpb-imports-moved',[...m]);}};
+async function saveImport(B){
+  try{await libPut(importEntry(B,true));markMoved(B.id);return true;}
+  catch(e){return legacySave(B);}
+}
+async function removeImport(id){
+  try{await libDel(id);}catch(e){}
+  const old=store.get('bpb-imports');if(old)store.set('bpb-imports',old.filter(e=>e.id!==id));
+  const m=moved();if(m.delete(id))store.set('bpb-imports-moved',[...m]);
+}
+function entryToBuild(e){
+  const raw=typeof e.data==='string'?unb64(e.data):new Uint8Array(e.data),idx=new Uint16Array(raw.buffer,raw.byteOffset,raw.byteLength>>1),cells=[];
+  for(let i=0;i<idx.length;i++)if(idx[i]){const x=i%e.X,z=Math.floor(i/e.X)%e.Z,y=Math.floor(i/(e.X*e.Z));cells.push([x,y,z,e.pal[idx[i]-1]]);}
+  const B=buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,cells,e.dv);B.t=e.t||0;
+  if(e.excl&&e.excl.length||e.feet!=null){B.excl=new Set(e.excl||[]);B.feetSet=e.feet!=null?e.feet:null;if(!applyExcl(B)){B.excl=new Set();applyExcl(B);}}
+  return B;
+}
+// all'avvio: subito quelle del salvataggio vecchio, poi quelle di IndexedDB; le vecchie vengono spostate in IndexedDB
 function loadImports(){
-  for(const e of(store.get('bpb-imports')||[])){try{
-    const idx=new Uint16Array(unb64(e.data).buffer),cells=[];
-    for(let i=0;i<idx.length;i++)if(idx[i]){const x=i%e.X,z=Math.floor(i/e.X)%e.Z,y=Math.floor(i/(e.X*e.Z));cells.push([x,y,z,e.pal[idx[i]-1]]);}
-    const B=buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,cells,e.dv);
-    if(e.excl&&e.excl.length||e.feet!=null){B.excl=new Set(e.excl||[]);B.feetSet=e.feet!=null?e.feet:null;if(!applyExcl(B)){B.excl=new Set();applyExcl(B);}}
-    BUILDS.push(B);}catch(err){}}
+  const m=moved();
+  for(const e of(store.get('bpb-imports')||[])){if(m.has(e.id))continue;try{BUILDS.push(entryToBuild(e));}catch(err){}}
+}
+async function loadLibrary(){
+  let list;try{list=await libAll();}catch(e){return [];}
+  const added=[];
+  for(const e of(list||[]).sort((p,q)=>(p.t||0)-(q.t||0))){if(BUILDS.some(b=>b.id===e.id))continue;try{const B=entryToBuild(e);BUILDS.push(B);added.push(B);}catch(err){}}
+  const m=moved(),inDb=new Set((list||[]).map(e=>e.id));
+  for(const e of(store.get('bpb-imports')||[])){if(m.has(e.id))continue;const B=BUILDS.find(b=>b.id===e.id);if(!B)continue;
+    try{if(!inDb.has(e.id))await libPut(importEntry(B,true));markMoved(e.id);}catch(err){break;}}
+  return added;
 }
 
 /* ================= scrittura file di struttura ================= */
@@ -2013,7 +2068,7 @@ async function importFile(f){
     const tk=terrainKeys(B);let terr=0;
     if(tk.size&&groundTop(B.orig,t=>tk.has(matKey(t)))>=0){B.excl=tk;if(applyExcl(B))terr=B.exclRows.reduce((a,r)=>a+r.n,0);else{B.excl=new Set();applyExcl(B);}}
     BUILDS.push(B);makeCard(B);fillTags();
-    const saved=saveImport(B);
+    B.t=Date.now();const saved=await saveImport(B);
     S.cat='Tutte';$('catChips').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c==='Tutte')));
     renderLibrary();selectBuild(B.id);
     impMsg(T('Importata: {0} ({1} blocchi, {2} livelli).',B.name,B.total,B.Y)+(terr?' '+T('Ho escluso {0} blocchi di terreno (terra, pietra, minerali): puoi rimetterli dall\'elenco dei materiali.',NUM(terr)):'')+(saved?'':' '+T('Non riesco a salvarla nel browser (file grande o memoria piena): la prossima volta dovrai ricaricarla.')));
@@ -2341,7 +2396,7 @@ let rmArmed=false;
 $('rmImp').addEventListener('click',()=>{
   const B=S.B;if(!B.imported)return;
   if(!rmArmed){rmArmed=true;$('rmImp').textContent=T('Conferma: rimuovi {0}',B.name);return;}
-  store.set('bpb-imports',(store.get('bpb-imports')||[]).filter(e=>e.id!==B.id));
+  removeImport(B.id);
   ['bpb-done-','bpb-layer-','bpb-style-'].forEach(k=>store.del(k+B.id));
   BUILDS.splice(BUILDS.indexOf(B),1);cards[B.id].remove();delete cards[B.id];fillTags();renderLibrary();
   impMsg(T('Rimossa dalla libreria: {0}.',B.name));selectBuild('casetta');
@@ -2580,8 +2635,10 @@ if(!T3)$('hint').textContent=T(HINT3D);
 else resize3D();
 loadImports();
 BUILDS.forEach(makeCard);fillTags();renderLibrary();
-const fromHash=(location.hash||'').replace('#','');
+const fromHash=(location.hash||'').replace('#',''),lastId=store.get('bpb-last');
 selectBuild(BUILDS.some(b=>b.id===fromHash)?fromHash:(BUILDS.some(b=>b.id===store.get('bpb-last'))?store.get('bpb-last'):'casetta'));
+loadLibrary().then(added=>{if(!added.length)return;added.forEach(makeCard);fillTags();renderLibrary();
+  const want=fromHash||lastId;if(want&&want!==S.B.id&&added.some(b=>b.id===want))selectBuild(want);});
 loadTexStore().then(r=>{if(r)applyTextures(r.map,r.sources);});
 $('dlPdf').disabled=true;$('dlZip').disabled=true;$('dlPack').disabled=true;
 /* Telecomando: PeerJS collega direttamente PC e telefono; il server pubblico gratuito di PeerJS serve solo a farli trovare.
@@ -2616,6 +2673,28 @@ $('remote').hidden=false;renderRemoteStatus();
 DL={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return{status:'saved'};}};
 $('dlPdf').disabled=false;$('dlZip').disabled=false;$('dlPack').disabled=false;
+const APP_VERSION='0.3';
+/* app installabile: il browser offre l'installazione (Chrome, Edge, Android); su iPhone e iPad si spiega come fare da Safari */
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+{let promptEv=null;const ib=$('installBtn'),im=$('installMsg');
+  const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const ffAndroid=/firefox/i.test(ua)&&/android/i.test(ua),ffDesk=/firefox/i.test(ua)&&!/android|mobile/i.test(ua);
+  const say=t=>{im.textContent=t;im.hidden=false;};
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEv=e;if(!standalone())ib.hidden=false;});
+  window.addEventListener('appinstalled',()=>{ib.hidden=true;promptEv=null;say(T('App installata: la trovi tra le app del computer o nella schermata del telefono.'));});
+  // dove il browser non offre il pulsante di installazione, il pulsante spiega cosa fare
+  if(!standalone()&&(ios||ffAndroid||ffDesk))ib.hidden=false;
+  ib.addEventListener('click',async()=>{
+    if(promptEv){const ev=promptEv;promptEv=null;ev.prompt();try{const r=await ev.userChoice;if(r&&r.outcome==='accepted')ib.hidden=true;}catch(e){}return;}
+    if(ios)say(T('Su iPhone e iPad: tocca il pulsante Condividi di Safari e scegli «Aggiungi alla schermata Home».'));
+    else if(ffAndroid)say(T('Su Firefox per Android: apri il menu (⋮) e scegli «Aggiungi alla schermata Home» oppure «Installa».'));
+    else if(ffDesk)say(T('Firefox per computer per ora non installa i siti come app. Il sito funziona lo stesso anche senza internet dopo la prima visita: aggiungilo ai segnalibri. Per averlo come app con una sua icona usa Chrome, Edge o Chromium.'));
+    else say(T('Cerca nel menu del browser la voce «Installa» o «Aggiungi alla schermata Home».'));});
+  // aggiornamenti: la pagina arriva sempre dalla rete quando sei online, quindi l'app installata si aggiorna da sola; lo diciamo una volta
+  const prev=store.get('bpb-version');if(prev&&prev!==APP_VERSION)say(T('Aggiornata alla versione {0}. Non serve reinstallare nulla: gli aggiornamenti arrivano da soli.',APP_VERSION));
+  store.set('bpb-version',APP_VERSION);
+  $('appVersion').textContent=T('Versione {0}',APP_VERSION);}
 })();
 </script>
 </body>
