@@ -95,14 +95,11 @@ Librerie usate: [three.js](https://threejs.org/) (MIT), [jsPDF](https://github.c
 Free, layer-by-layer building guides for Minecraft (Java Edition).
 
 > **A hobby project, made with AI purely for fun.**
-> The code was written almost entirely with the help of AI. I decided what to build and tested it in game.
-> It is not a professional product: use it, change it and report problems, but without any warranty.
+> Use it, change it and report problems, but without any warranty.
 
 ### Language
 
-The app is available in **Italian and English**. It picks your browser's language automatically, and you can switch at any time with the **IT / EN** buttons at the top. Your choice is remembered.
-
-The PDF manual, the README file inside the downloads and the in-game data pack messages use the language that is active when you download them.
+The app is available in **Italian and English**.
 
 ### Features
 
@@ -147,12 +144,6 @@ The exact `bpb_<name>` is shown in the app after the download and in chat when t
 #### With Litematica
 
 The **Structure files** zip contains the `.litematic` file. Copy it into the `schematics` folder of your game or modpack and open it from the Litematica menu.
-
-### Publishing on GitHub Pages
-
-1. Create a GitHub repository and upload `index.html`, `README.md` and `LICENSE`.
-2. Go to **Settings → Pages**, choose **Deploy from a branch**, branch `main` and folder `/ (root)`, then save.
-3. After a few minutes the site is online at `https://<your-user>.github.io/<repository-name>/`.
 
 ### Privacy and external services
 
