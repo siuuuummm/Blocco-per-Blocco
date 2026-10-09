@@ -14,8 +14,14 @@ self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
   const u=new URL(r.url);
   if(r.mode==='navigate'&&u.origin===location.origin){
-    e.respondWith(fetch(r).then(res=>{if(res.ok){const c=res.clone();caches.open(V).then(ca=>ca.put('./index.html',c));}return res;})
-      .catch(()=>caches.match('./index.html',{ignoreSearch:true})));return;}
+    // prima la rete, così l'app si aggiorna da sola; se la rete non risponde entro 4 secondi si apre la copia salvata
+    const net=fetch(r).then(res=>{if(res.ok){const c=res.clone();caches.open(V).then(ca=>ca.put('./index.html',c));}return res;});
+    const saved=()=>caches.match('./index.html',{ignoreSearch:true});
+    e.respondWith(new Promise(done=>{let over=false;
+      const t=setTimeout(()=>saved().then(c=>{if(c&&!over){over=true;done(c);}}),4000);
+      net.then(res=>{if(!over){over=true;clearTimeout(t);done(res);}})
+        .catch(()=>saved().then(c=>{if(!over){over=true;clearTimeout(t);done(c||Response.error());}}));}));
+    return;}
   if(u.origin!==location.origin&&!CDN.test(u.hostname))return; // per esempio il servizio del telecomando: sempre dalla rete
   e.respondWith(caches.open(V).then(async ca=>{const hit=await ca.match(r,{ignoreVary:true});
     const net=fetch(r).then(res=>{if(res&&(res.ok||res.type==='opaque'))ca.put(r,res.clone());return res;}).catch(()=>hit);

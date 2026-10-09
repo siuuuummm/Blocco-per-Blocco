@@ -476,6 +476,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
   </main>
 
   <footer>
+    <p id="appVersion"></p>
     <p>Scorciatoie: <kbd>←</kbd> <kbd>→</kbd> cambiano livello, <kbd>R</kbd> ruota la griglia. Livelli spuntati, stili e file importati restano salvati in questo browser.</p>
     <p>Blocco per Blocco è un progetto amatoriale, creato con l'aiuto dell'intelligenza artificiale per puro divertimento e hobby. È gratuito e open source (licenza MIT). Non raccoglie dati: file importati, texture e progressi restano nel tuo browser. Il telecomando usa il server pubblico gratuito di PeerJS solo per mettere in contatto i due dispositivi.</p>
     <p>Il progetto è fornito così com'è, senza garanzie di alcun tipo. L'autore non è responsabile di usi impropri, di danni o di problemi derivanti dal suo utilizzo, compresi danni ai mondi di gioco: fai sempre una copia di backup del mondo prima di aggiungere un data pack.</p>
@@ -794,7 +795,12 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Installa l'app": "Install the app",
 "Aggiungi Blocco per Blocco al computer o al telefono: si apre in una finestra sua e funziona anche senza internet.": "Add Blocco per Blocco to your computer or phone: it opens in its own window and also works offline.",
 "Su iPhone e iPad: tocca il pulsante Condividi di Safari e scegli «Aggiungi alla schermata Home».": "On iPhone and iPad: tap Safari's Share button and choose “Add to Home Screen”.",
-"App installata: la trovi tra le app del computer o nella schermata del telefono.": "App installed: you'll find it among your computer's apps or on your phone's home screen."
+"App installata: la trovi tra le app del computer o nella schermata del telefono.": "App installed: you'll find it among your computer's apps or on your phone's home screen.",
+"Su Firefox per Android: apri il menu (⋮) e scegli «Aggiungi alla schermata Home» oppure «Installa».": "On Firefox for Android: open the menu (⋮) and choose “Add to Home screen” or “Install”.",
+"Firefox per computer per ora non installa i siti come app. Il sito funziona lo stesso anche senza internet dopo la prima visita: aggiungilo ai segnalibri. Per averlo come app con una sua icona usa Chrome, Edge o Chromium.": "Firefox for desktop can't install websites as apps yet. The site still works offline after your first visit: bookmark it. To get it as an app with its own icon, use Chrome, Edge or Chromium.",
+"Cerca nel menu del browser la voce «Installa» o «Aggiungi alla schermata Home».": "Look in your browser's menu for “Install” or “Add to Home screen”.",
+"Aggiornata alla versione {0}. Non serve reinstallare nulla: gli aggiornamenti arrivano da soli.": "Updated to version {0}. No need to reinstall anything: updates arrive by themselves.",
+"Versione {0}": "Version {0}"
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -2667,18 +2673,28 @@ $('remote').hidden=false;renderRemoteStatus();
 DL={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return{status:'saved'};}};
 $('dlPdf').disabled=false;$('dlZip').disabled=false;$('dlPack').disabled=false;
+const APP_VERSION='0.3';
 /* app installabile: il browser offre l'installazione (Chrome, Edge, Android); su iPhone e iPad si spiega come fare da Safari */
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 {let promptEv=null;const ib=$('installBtn'),im=$('installMsg');
   const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const ffAndroid=/firefox/i.test(ua)&&/android/i.test(ua),ffDesk=/firefox/i.test(ua)&&!/android|mobile/i.test(ua);
   const say=t=>{im.textContent=t;im.hidden=false;};
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEv=e;if(!standalone())ib.hidden=false;});
   window.addEventListener('appinstalled',()=>{ib.hidden=true;promptEv=null;say(T('App installata: la trovi tra le app del computer o nella schermata del telefono.'));});
-  if(ios&&!standalone())ib.hidden=false;
+  // dove il browser non offre il pulsante di installazione, il pulsante spiega cosa fare
+  if(!standalone()&&(ios||ffAndroid||ffDesk))ib.hidden=false;
   ib.addEventListener('click',async()=>{
     if(promptEv){const ev=promptEv;promptEv=null;ev.prompt();try{const r=await ev.userChoice;if(r&&r.outcome==='accepted')ib.hidden=true;}catch(e){}return;}
-    if(ios)say(T('Su iPhone e iPad: tocca il pulsante Condividi di Safari e scegli «Aggiungi alla schermata Home».'));});}
+    if(ios)say(T('Su iPhone e iPad: tocca il pulsante Condividi di Safari e scegli «Aggiungi alla schermata Home».'));
+    else if(ffAndroid)say(T('Su Firefox per Android: apri il menu (⋮) e scegli «Aggiungi alla schermata Home» oppure «Installa».'));
+    else if(ffDesk)say(T('Firefox per computer per ora non installa i siti come app. Il sito funziona lo stesso anche senza internet dopo la prima visita: aggiungilo ai segnalibri. Per averlo come app con una sua icona usa Chrome, Edge o Chromium.'));
+    else say(T('Cerca nel menu del browser la voce «Installa» o «Aggiungi alla schermata Home».'));});
+  // aggiornamenti: la pagina arriva sempre dalla rete quando sei online, quindi l'app installata si aggiorna da sola; lo diciamo una volta
+  const prev=store.get('bpb-version');if(prev&&prev!==APP_VERSION)say(T('Aggiornata alla versione {0}. Non serve reinstallare nulla: gli aggiornamenti arrivano da soli.',APP_VERSION));
+  store.set('bpb-version',APP_VERSION);
+  $('appVersion').textContent=T('Versione {0}',APP_VERSION);}
 })();
 </script>
 </body>
