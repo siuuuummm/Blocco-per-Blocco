@@ -9,14 +9,11 @@
 Guide gratuite per costruire in Minecraft (Java Edition), un livello alla volta.
 
 > **Progetto amatoriale, fatto con l'intelligenza artificiale per puro divertimento e hobby.**
-> Il codice è stato scritto quasi interamente con l'aiuto dell'IA. Io ho deciso cosa costruire e l'ho provato in gioco.
-> Non è un prodotto professionale: usalo, modificalo e segnala i problemi, ma senza garanzie.
+> Usalo, modificalo e segnala i problemi, ma senza garanzie.
 
 ### Lingua
 
-L'app è in **italiano e inglese**. Sceglie da sola la lingua del browser; puoi cambiarla in qualsiasi momento con i pulsanti **IT / EN** in alto. La scelta viene ricordata.
-
-Il manuale PDF, il file LEGGIMI e i messaggi del data pack in gioco usano la lingua attiva nel momento in cui li scarichi.
+L'app è in **italiano e inglese**.
 
 ### Cosa fa
 
@@ -62,12 +59,6 @@ Servono i comandi attivi: trucchi attivi in singolo giocatore, oppure permessi d
 
 Lo zip **File struttura** contiene il file `.litematic`. Copialo nella cartella `schematics` del gioco o del modpack e aprilo dal menu di Litematica.
 
-### Pubblicarlo su GitHub Pages
-
-1. Crea un repository su GitHub e carica `index.html`, `README.md` e `LICENSE`.
-2. Vai in **Settings → Pages**, scegli **Deploy from a branch**, il ramo `main` e la cartella `/ (root)`, poi salva.
-3. Dopo qualche minuto il sito è online all'indirizzo `https://<tuo-utente>.github.io/<nome-repository>/`.
-
 ### Privacy e servizi esterni
 
 L'app non ha un server e non raccoglie dati: file importati, texture e progressi restano nel browser.
@@ -76,7 +67,7 @@ La pagina carica dall'esterno:
 - **librerie**: three.js e jsPDF da cdnjs e jsDelivr, PeerJS da jsDelivr;
 - **caratteri**: da Google Fonts.
 
-Il telecomando usa il server pubblico gratuito di PeerJS solo per mettere in contatto PC e telefono. Poi i dati passano direttamente tra i due dispositivi.
+Il telecomando usa il server pubblico gratuito di PeerJS solo per mettere in contatto PC e telefono.
 
 ### Limiti noti
 
