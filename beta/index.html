@@ -848,7 +848,13 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Il manuale avrà circa {0} pagina.": "The manual will have about {0} page.",
 "Il manuale avrà circa {0} pagine.": "The manual will have about {0} pages.",
 "Sono tante: puoi scegliere solo alcuni livelli.": "That's a lot: you can pick only some layers.",
-"Nord in alto, est a destra: come la mappa del gioco.": "North at the top, east to the right: like the game's map."
+"Nord in alto, est a destra: come la mappa del gioco.": "North at the top, east to the right: like the game's map.",
+"Il manuale avrebbe circa {0} pagine e richiederebbe qualche minuto. Scegli i livelli nelle opzioni qui sotto, oppure premi di nuovo «Manuale PDF» per crearlo comunque.": "The manual would have about {0} pages and take a few minutes. Choose the layers in the options below, or press “PDF manual” again to create it anyway.",
+"parte {0} di {1}": "part {0} of {1}",
+"Creo il manuale, {0} (livelli {1}–{2})…": "Creating the manual, {0} (layers {1}–{2})…",
+"_livelli_{0}-{1}": "_layers_{0}-{1}",
+"Scaricato: il manuale è diviso in {0} PDF (uno ogni circa 200 pagine), raccolti in uno zip.": "Downloaded: the manual is split into {0} PDFs (one every 200 pages or so), collected in a zip.",
+"Verrà diviso in più PDF da circa 200 pagine, raccolti in uno zip.": "It will be split into several PDFs of about 200 pages, collected in a zip."
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -2469,12 +2475,16 @@ function pdfLayers(B){const Y=B.Y;if(PDFO.layers==='cur')return[S.layer];
   return[...Array(Y).keys()];}
 function pdfEstimate(){const B=S.B,v=V(),L=pdfLayers(B);let n=1;
   for(const ly of L){n++;if(PDFO.grid==='chunk')n+=Math.ceil(chunkTiles(v,ly,PDFO).length/4);}return n;}
-async function makeManual(){
+const ICA={};let ICN=0;
+// le immagini delle griglie vanno nel PDF come JPEG: la libreria le inserisce così come sono, mentre i PNG li ricomprime (lentissimo)
+const jpg=cv=>cv.toDataURL('image/jpeg',.85);
+// opt: layers (quali livelli), cover (con la copertina), label (es. "parte 2 di 9")
+async function makeManual(opt){opt=opt||{};const withCover=opt.cover!==false;
   const jsPDF=await loadJsPDF();
   const B=S.B,v=V(),doc=new jsPDF({unit:'mm',format:'a4',compress:true});
   const M=14,PW=210,CW=PW-2*M;
   const PRINT={bg:'#ffffff',muted:'#5a655d',line:'#d3dad0',strong:'#8d998a',sunk:'#f3f6f0',accent:'#3a7628'};
-  const footer=(n)=>{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);doc.text('Blocco per Blocco · '+B.name,M,290);doc.text(String(n),PW-M,290,{align:'right'});};
+  const footer=(n)=>{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);doc.text('Blocco per Blocco · '+B.name+(opt.label?' · '+opt.label:''),M,290);doc.text(String(n),PW-M,290,{align:'right'});};
   let page=1;
   const matTable=(rows,y,maxY,title)=>{
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30);doc.text(title,M,y);y+=5;
@@ -2482,7 +2492,8 @@ async function makeManual(){
     for(const r of rows){
       if(yy+rowH>maxY){if(col===0){col=1;yy=y;}else{footer(page);doc.addPage();page++;y=20;yy=y;col=0;maxY=280;}}
       const x=M+col*colW;
-      try{doc.addImage(icon(r.id),'PNG',x,yy-4.2,5,5);}catch(e){}
+      // ogni icona si elabora una volta sola: con il nome (alias) la libreria riusa quella già inserita
+      try{doc.addImage(icon(r.id),'PNG',x,yy-4.2,5,5,'ic'+(ICA[r.id]||(ICA[r.id]=++ICN)));}catch(e){}
       doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30);
       const nm=doc.splitTextToSize(r.d.name,colW-38)[0];doc.text(nm,x+7,yy);
       doc.setFont('helvetica','bold');doc.text(String(r.n),x+colW-22,yy,{align:'right'});
@@ -2490,6 +2501,7 @@ async function makeManual(){
       yy+=rowH;}
     return col===0?yy:maxY;
   };
+  if(withCover){
   // copertina
   doc.setFont('helvetica','bold');doc.setFontSize(24);doc.setTextColor(26,33,28);doc.text(doc.splitTextToSize(B.name,CW),M,24);
   doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(58,118,40);
@@ -2497,7 +2509,7 @@ async function makeManual(){
   doc.setFontSize(10.5);doc.setTextColor(80);const dl=doc.splitTextToSize(B.desc,CW);doc.text(dl,M,39);
   let y=39+dl.length*5+2;
   const hero=document.createElement('canvas');renderIso(hero,v,{mode:'full',rot:2,size:[760,470],dpr:2,pad:.9,bg:'#f3f6f0'});
-  doc.addImage(hero.toDataURL('image/png'),'PNG',M,y,CW,CW*470/760,undefined,'FAST');y+=CW*470/760+7;
+  doc.addImage(jpg(hero),'JPEG',M,y,CW,CW*470/760);y+=CW*470/760+7;
   doc.setFontSize(10);doc.setTextColor(40);
   doc.text(T('Dimensioni {0} × {1} × {2} (larghezza × profondità × altezza) · {3} blocchi · {4} livelli',v.X,v.Z,v.Y,B.total,v.Y),M,y);y+=5;
   if(B.slots.length){doc.setTextColor(100);doc.text(T('Stile: ')+B.slots.map(s=>T(SLOTNAME[s])+' '+(s[0]==='W'?woodLabel(S.st[s]):s[0]==='S'?stoneLabel(S.st[s]):colorLabel(S.st[s]))).join(' · '),M,y,{maxWidth:CW});y+=5;}
@@ -2508,25 +2520,25 @@ async function makeManual(){
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30);doc.text(T('Note e consigli'),M,y);y+=5;
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(60);
     for(const n of notes){const l=doc.splitTextToSize('- '+n,CW);if(y+l.length*4.5>282){footer(page);doc.addPage();page++;y=20;}doc.text(l,M,y);y+=l.length*4.5+1;}}
-  footer(page);
+  footer(page);}
   // pagine dei livelli
   const heavy=B.total>40000;
   const CH=PDFO.grid==='chunk',ROT=CH?0:S.rot;
   // per le costruzioni molto larghe la griglia stampata ha comunque blocchi minuscoli: si usa un'immagine più leggera
   const[A]=rdims(v,ROT);const cpx=A>200?Math.max(3,Math.floor(1300/(A+1.3))):Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
   const front=CH?T('Nord in alto, est a destra: come la mappa del gioco.'):frontSide(B,v,S.rot);
-  const LAY=pdfLayers(B);
+  const LAY=opt.layers||pdfLayers(B);let fresh=!withCover;
   const outline=(title,pg)=>{try{if(doc.outline)doc.outline.add(null,title,{pageNumber:pg});}catch(e){}};
-  outline(T('Copertina e materiali'),1);
+  if(withCover)outline(T('Copertina e materiali'),1);
   for(const ly of LAY){
     dlMsg(T('Creo il manuale: livello {0} di {1}…',ly+1,v.Y));await tick();
-    doc.addPage();page++;outline(T('Livello {0}',ly+1),page);
+    if(fresh)fresh=false;else{doc.addPage();page++;}outline(T('Livello {0}',ly+1),page);
     doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(26,33,28);doc.text(T('Livello {0} di {1}',ly+1,v.Y),M,22);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(90);
     doc.text(T('{0} blocchi in questo livello',v.layers[ly].length),M,29);
     if(front)doc.text(front,M,34,{maxWidth:118});
     if(!heavy){const th=document.createElement('canvas');renderIso(th,v,{mode:'upto',layer:ly,rot:2,size:[300,220],dpr:2,pad:.9,fog:'rgba(255,255,255,.6)',bg:'#f3f6f0'});
-      doc.addImage(th.toDataURL('image/png'),'PNG',PW-M-58,10,58,58*220/300,undefined,'FAST');}
+      doc.addImage(jpg(th),'JPEG',PW-M-58,10,58,58*220/300);}
     const gc=document.createElement('canvas');const gg=drawGrid(gc,v,ly,ROT,cpx,PRINT,null,1);
     const tiles=CH?chunkTiles(v,ly,PDFO):[];
     if(CH){ // confini e nomi dei chunk sulla pianta del livello
@@ -2536,8 +2548,7 @@ async function makeManual(){
         const lab=t.name.replace(/^Chunk /,'');g.lineWidth=3;g.strokeStyle='rgba(255,255,255,.85)';g.strokeText(lab,x+w/2,y+h/2);g.fillText(lab,x+w/2,y+h/2);g.lineWidth=Math.max(1.5,cpx/5);g.strokeStyle='#c98a12';}
       g.restore();}
     const maxW=CW,maxH=150,sc=Math.min(maxW/gg.cw,maxH/gg.ch);const gw=gg.cw*sc,gh=gg.ch*sc,gy=56;
-    if(gc.width*gc.height>1.2e6||A>200)doc.addImage(gc.toDataURL('image/jpeg',.82),'JPEG',M,gy,gw,gh);
-    else doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
+    doc.addImage(gc.width*gc.height>1.2e6||A>200?gc.toDataURL('image/jpeg',.82):jpg(gc),'JPEG',M,gy,gw,gh);
     let yy=gy+gh+5;doc.setFontSize(8);doc.setTextColor(110);
     doc.text(T('In grigio chiaro il livello sotto. ½ = lastra. Freccia bianca = lato alto delle scale. Righe spesse ogni 5 blocchi.'),M,yy);yy+=7;
     if(CH){doc.text(T('In arancione i chunk 16 × 16: nelle pagine seguenti ognuno è ingrandito. In gioco F3+G mostra i confini dei chunk.'),M,yy);yy+=6;}
@@ -2556,8 +2567,8 @@ async function makeManual(){
         const has=PDFO.x!=null,reg=tileReg(v,0,t);reg.la=a=>has?PDFO.x+a:a+1;reg.lb=b=>has?PDFO.z+b:b+1;
         // righe spesse ogni 4 blocchi, allineate ai chunk: un chunk è diviso in 4 × 4 quadrati
         reg.thick=(n,ax)=>(((ax==='a'?(has?PDFO.x:0):(has?PDFO.z:0))+n)%4+4)%4===0;
-        const tc=document.createElement('canvas'),tg=drawGrid(tc,v,ly,0,26,PRINT,null,1,reg);
-        const k=TW/(tg.m+16*26+2);doc.addImage(tc.toDataURL('image/png'),'PNG',x,y+10.5,tg.cw*k,tg.ch*k,undefined,'FAST');});
+        const tc=document.createElement('canvas'),tg=drawGrid(tc,v,ly,0,22,PRINT,null,1,reg);
+        const k=TW/(tg.m+16*22+2);doc.addImage(jpg(tc),'JPEG',x,y+10.5,tg.cw*k,tg.ch*k);});
       matTable(countMats(four.flatMap(t=>t.cells)),22+Math.ceil(four.length/2)*(TH+8)+4,280,four.length===1?T('Materiali di questo chunk'):T('Materiali di questi chunk'));
       footer(page);}
   }
@@ -2568,16 +2579,35 @@ function renderPdfOpt(fresh){const B=S.B;
     document.querySelectorAll('input[name=pdfL]').forEach(r=>{r.checked=r.value==='all';});document.querySelectorAll('input[name=pdfG]').forEach(r=>{r.checked=r.value===PDFO.grid;});
     $('pdfFrom').value=1;$('pdfTo').value=B.Y;}
   $('pdfFrom').max=$('pdfTo').max=B.Y;
-  if($('pdfOpt').open||!fresh){const n=pdfEstimate();$('pdfEst').textContent=T(n===1?'Il manuale avrà circa {0} pagina.':'Il manuale avrà circa {0} pagine.',NUM(n))+(n>400?' '+T('Sono tante: puoi scegliere solo alcuni livelli.'):'');}}
+  if($('pdfOpt').open||!fresh){const n=pdfEstimate();$('pdfEst').textContent=T(n===1?'Il manuale avrà circa {0} pagina.':'Il manuale avrà circa {0} pagine.',NUM(n))+(n>250?' '+T('Verrà diviso in più PDF da circa 200 pagine, raccolti in uno zip.'):'');}}
 const readPdfOpt=()=>{PDFO.layers=(document.querySelector('input[name=pdfL]:checked')||{}).value||'all';PDFO.grid=(document.querySelector('input[name=pdfG]:checked')||{}).value||'layer';
   PDFO.from=parseInt($('pdfFrom').value,10)||1;PDFO.to=parseInt($('pdfTo').value,10)||S.B.Y;
   const x=parseInt($('pdfX').value,10),z=parseInt($('pdfZ').value,10);PDFO.x=Number.isFinite(x)&&Number.isFinite(z)?x:null;PDFO.z=PDFO.x!=null?z:null;renderPdfOpt(false);};
-$('pdfOpt').addEventListener('change',readPdfOpt);$('pdfOpt').addEventListener('toggle',()=>{if($('pdfOpt').open)renderPdfOpt(false);});
+$('pdfOpt').addEventListener('change',()=>{pdfArmed=false;readPdfOpt();});$('pdfOpt').addEventListener('toggle',()=>{if($('pdfOpt').open)renderPdfOpt(false);});
 $('pdfFrom').addEventListener('focus',()=>{document.querySelector('input[name=pdfL][value=span]').checked=true;});
 $('pdfTo').addEventListener('focus',()=>{document.querySelector('input[name=pdfL][value=span]').checked=true;});
+let pdfArmed=false;
 $('dlPdf').addEventListener('click',async()=>{
-  const btn=$('dlPdf');btn.disabled=true;dlMsg(T('Creo il manuale…'));
-  try{const blob=await makeManual();await saveFile(slug(S.B.name)+T('_manuale')+'.pdf',blob);}
+  const btn=$('dlPdf');
+  // manuali lunghissimi: prima si avvisa e si aprono le opzioni; un secondo clic lo crea comunque
+  const est=pdfEstimate();
+  if(est>300&&!pdfArmed){pdfArmed=true;$('pdfOpt').open=true;renderPdfOpt(false);
+    dlMsg(T('Il manuale avrebbe circa {0} pagine e richiederebbe qualche minuto. Scegli i livelli nelle opzioni qui sotto, oppure premi di nuovo «Manuale PDF» per crearlo comunque.',NUM(est)));return;}
+  pdfArmed=false;btn.disabled=true;dlMsg(T('Creo il manuale…'));
+  try{
+    // oltre circa 250 pagine il manuale si divide in parti da circa 200, ognuna un PDF a sé, raccolte in uno zip:
+    // un unico PDF enorme rallenta sempre di più e riempie la memoria
+    const B=S.B,v=V(),L=pdfLayers(B),per=ly=>1+(PDFO.grid==='chunk'?Math.ceil(chunkTiles(v,ly,PDFO).length/4):0);
+    if(est<=250){const blob=await makeManual();await saveFile(slug(B.name)+T('_manuale')+'.pdf',blob);}
+    else{const groups=[];let cur=[],n=3;
+      for(const ly of L){const k=per(ly);if(cur.length&&n+k>200){groups.push(cur);cur=[];n=0;}cur.push(ly);n+=k;}if(cur.length)groups.push(cur);
+      const files=[];
+      for(let i=0;i<groups.length;i++){const g=groups[i],lab=T('parte {0} di {1}',i+1,groups.length);
+        dlMsg(T('Creo il manuale, {0} (livelli {1}–{2})…',lab,g[0]+1,g[g.length-1]+1));await tick();
+        const blob=await makeManual({layers:g,cover:i===0,label:lab});
+        files.push({name:slug(B.name)+T('_manuale')+'_'+String(i+1).padStart(2,'0')+T('_livelli_{0}-{1}',g[0]+1,g[g.length-1]+1)+'.pdf',data:new Uint8Array(await blob.arrayBuffer())});}
+      await saveFile(slug(B.name)+T('_manuale')+'.zip',zip(files));
+      dlMsg(T('Scaricato: il manuale è diviso in {0} PDF (uno ogni circa 200 pagine), raccolti in uno zip.',groups.length));}}
   catch(e){dlMsg(e&&e.message==='pdf'?T('Non riesco a caricare il generatore di PDF: controlla la connessione e riprova.'):T('Non sono riuscito a creare il manuale.'));}
   finally{btn.disabled=false;}
 });
