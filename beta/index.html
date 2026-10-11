@@ -388,7 +388,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
           <ol>
             <li>Copia il file del data pack, senza estrarlo, in <code>.minecraft/saves/&lt;mondo&gt;/datapacks/</code>. Se il mondo è aperto scrivi <code>/reload</code>.</li>
             <li>Mettiti dove vuoi l'angolo della costruzione: parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Premi F3 per vedere la direzione.</li>
-            <li>Scrivi <code class="dpcmd" data-f="start"></code>: compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso.</li>
+            <li>Scrivi <code class="dpcmd" data-f="start"></code>: compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso. I comandi corti <code>bpb:</code> comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con <code class="dpcmd" data-ns="own" data-f="start"></code>.</li>
             <li>Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
             <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
             <li>Per costruire in ordine: <code class="dpcmd" data-f="misure"></code> accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso comando le spegne.</li>
@@ -859,7 +859,10 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; /function {2}:misure le spegne.": "Measurements on: outline of {0} × {1} blocks on the current layer, orange ticks every 5 blocks (longer every 10), the centre in light blue. They follow the layer; /function {2}:misure turns them off.",
 "Misure spente.": "Measurements off.",
 "Per costruire in ordine:": "To build neatly:",
-"accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso comando le spegne.": "turns on measuring guides on the current layer: the build's outline, orange ticks every 5 blocks (longer every 10) and the centre in light blue. They follow the layer when you change it; the same command turns them off."
+"accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso comando le spegne.": "turns on measuring guides on the current layer: the build's outline, orange ticks every 5 blocks (longer every 10) and the centre in light blue. They follow the layer when you change it; the same command turns them off.",
+"Blocco per Blocco: fantasma di \"{0}\" pronto. Mettiti dove vuoi costruire e scrivi /function bpb:start (se hai più fantasmi installati: /function {1}:start).": "Blocco per Blocco: ghost of \"{0}\" ready. Stand where you want to build and type /function bpb:start (if you have several ghosts installed: /function {1}:start).",
+"I comandi corti": "The short",
+"comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con": "commands control the ghost you turned on last; if you have several ghosts installed, turn the first one on with"
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -2033,33 +2036,35 @@ async function dataPack(B,v,onProgress){
     if(BIG&&L2.length)L2.push('execute as @e[type=block_display,tag='+NEW+'] run data merge entity @s {'+TRANS+'}','tag @e[type=block_display,tag='+NEW+'] remove '+NEW);
     cnt.push(v.layers[y].length);LAY.push(await packText(L2.join('\n')+'\n'));
     if(onProgress&&y%3===0)onProgress(y+1,Y);}
-  const cmds='/function '+ns+':next, :prev, :all, :clear, :materiali, :mancano, :misure';
+  const cmds='/function bpb:next · bpb:prev · bpb:all · bpb:clear · bpb:materiali · bpb:mancano · bpb:misure';
   // elenco breve dei materiali di un livello, su una riga
   const MAXL=12;
   for(let y=0;y<Y;y++){const rows=countMats(v.layers[y]);if(!rows.length){F['mat/'+(y+1)]=[];continue;}
     const parts=[{text:T('Per questo livello servono: '),color:'gray'}];
     rows.slice(0,MAXL).forEach((r,i)=>{if(i)parts.push({text:', ',color:'gray'});parts.push({text:r.n+' ',color:'white'},tr(grp[gi.get(r.d.name)].mc,r.d.name));});
-    if(rows.length>MAXL)parts.push({text:T(' e altri {0} (/function {1}:mancano)',rows.length-MAXL,ns),color:'gray'});
+    if(rows.length>MAXL)parts.push({text:T(' e altri {0} (/function {1}:mancano)',rows.length-MAXL,'bpb'),color:'gray'});
     F['mat/'+(y+1)]=['tellraw @a '+q(parts)];}
   F.materiali=['tellraw @a '+q({text:T('Materiali per tutta la costruzione "{0}" ({1}):',name,slotText(all)),color:'gold'})];
   for(const g of grp){const st=stacks(g.r.n,g.r.d);F.materiali.push('tellraw @a '+q([{text:' • '+g.r.n+' ',color:'white'},tr(g.mc,g.r.d.name),...(st?[{text:'  ('+st+')',color:'gray'}]:[])]));}
   // cosa manca davvero adesso: conta i fantasmi ancora accesi di ogni materiale (gli arancioni hanno già il blocco giusto)
-  F.mancano=['execute unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.',ns),'yellow'),
+  F.mancano=['execute unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.','bpb'),'yellow'),
     'execute if entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
   for(const g of grp){const sel='@e[type=block_display,tag='+G+'_m'+g.j+',tag=!'+R+']';
     F.mancano.push('execute store result score '+MS+' bpb if entity '+sel);
     for(const n of g.mul){F.mancano.push('execute store result score '+MT+' bpb if entity @e[type=block_display,tag='+G+'_m'+g.j+'_'+n+',tag=!'+R+']');
       for(let i=1;i<n;i++)F.mancano.push('scoreboard players operation '+MS+' bpb += '+MT+' bpb');}
     F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
-  F.load=[...OBJ,say(T('Blocco per Blocco: fantasma di "{0}" pronto. Mettiti dove vuoi costruire e scrivi /function {1}:start',name,ns),'yellow')];
+  // il primo fantasma installato diventa quello attivo, così i comandi corti bpb:... funzionano subito
+  F.load=[...OBJ,'execute unless score #attivo bpb matches 1.. run '+ACT,
+    say(T('Blocco per Blocco: fantasma di "{0}" pronto. Mettiti dove vuoi costruire e scrivi /function bpb:start (se hai più fantasmi installati: /function {1}:start).',name,ns),'yellow')];
   const FEET=Math.max(0,Math.min(Y-1,B.feet|0));
   F.start=[...OBJ,'kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}','scoreboard players set '+L+' bpb 0',
-    say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Con /function {0}:attrezzi ricevi gli oggetti per cambiare livello con il tasto destro.',ns),'yellow'),
+    say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z). Con /function {0}:attrezzi ricevi gli oggetti per cambiare livello con il tasto destro.','bpb'),'yellow'),
     ...(FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.',FEET),'yellow')]:[]),
-    say(T('Materiali per tutta la costruzione: {0}. Elenco completo: /function {1}:materiali',slotText(all),ns),'yellow'),'function '+ns+':show'];
+    say(T('Materiali per tutta la costruzione: {0}. Elenco completo: /function {1}:materiali',slotText(all),'bpb'),'yellow'),'function '+ns+':show'];
   // guide di misura: contorno del livello, tacche ogni 5 blocchi (più lunghe ogni 10) e centro dei lati; seguono il livello corrente
   const GM='bpbm_'+sl,GD='#'+sl+'_gd',GT='#'+sl+'_gt',X=v.X,Z=v.Z,f=n=>(Math.round(n*1000)/1000)+'f',cc=n=>String(Math.round(n*1000)/1000);
-  const bar=(x,z,lx,lz,blk)=>'summon block_display ~'+cc(x)+' ~ ~'+cc(z)+' {block_state:{Name:"minecraft:'+blk+'",id:"minecraft:'+blk+'"},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0.02f,0f],scale:['+f(lx)+',0.04f,'+f(lz)+']},brightness:{sky:15,block:15},Tags:['+q(GM)+']}';
+  const bar=(x,z,lx,lz,blk)=>'summon block_display ~'+cc(x)+' ~ ~'+cc(z)+' {block_state:{Name:"minecraft:'+blk+'",id:"minecraft:'+blk+'"},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0.02f,0f],scale:['+f(lx)+',0.04f,'+f(lz)+']},brightness:{sky:15,block:15},Tags:['+q(GM)+','+q('bpb_misure')+']}';
   const DR=[bar(0,-.08,X,.06,'yellow_concrete'),bar(0,Z+.02,X,.06,'yellow_concrete'),bar(-.08,0,.06,Z,'yellow_concrete'),bar(X+.02,0,.06,Z,'yellow_concrete')];
   for(let k=5;k<X;k+=5){const L=k%10?.5:1;DR.push(bar(k-.03,-.08-L,.06,L,'orange_concrete'),bar(k-.03,Z+.08,.06,L,'orange_concrete'));}
   for(let k=5;k<Z;k+=5){const L=k%10?.5:1;DR.push(bar(-.08-L,k-.03,L,.06,'orange_concrete'),bar(X+.08,k-.03,L,.06,'orange_concrete'));}
@@ -2067,11 +2072,12 @@ async function dataPack(B,v,onProgress){
   DR.push(bar(X/2-.04,-1.6,.08,1.52,'light_blue_concrete'),bar(X/2-.04,Z+.08,.08,1.52,'light_blue_concrete'),bar(-1.6,Z/2-.04,1.52,.08,'light_blue_concrete'),bar(X+.08,Z/2-.04,1.52,.08,'light_blue_concrete'),
     bar(X/2-.02,0,.04,Z,'light_blue_concrete'),bar(0,Z/2-.02,X,.04,'light_blue_concrete'));
   F['misure/disegna']=DR;
-  F['misure/qui']=['kill @e[type=block_display,tag='+GM+']'];
+  // prima di disegnare si tolgono tutte le guide nel mondo (anche di altre costruzioni o di versioni vecchie del pack)
+  F['misure/qui']=['kill @e[type=block_display,tag=bpb_misure]','kill @e[type=block_display,tag='+GM+']'];
   for(let y=0;y<Y;y++)F['misure/qui'].push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+O+',limit=1] positioned ~ ~'+y+' ~ run function '+ns+':misure/disegna');
   F['misure/accendi']=['scoreboard players set '+GD+' bpb 1','function '+ns+':misure/qui',
-    say(T('Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; /function {2}:misure le spegne.',X,Z,ns),'yellow')];
-  F['misure/spegni']=['scoreboard players set '+GD+' bpb 0','kill @e[type=block_display,tag='+GM+']',say(T('Misure spente.'),'yellow')];
+    say(T('Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; /function {2}:misure le spegne.',X,Z,'bpb'),'yellow')];
+  F['misure/spegni']=['scoreboard players set '+GD+' bpb 0','kill @e[type=block_display,tag=bpb_misure]','kill @e[type=block_display,tag='+GM+']',say(T('Misure spente.'),'yellow')];
   F.misure=[...OBJ,'execute store result score '+GT+' bpb run scoreboard players get '+GD+' bpb',
     'execute if score '+GT+' bpb matches 1 run function '+ns+':misure/spegni','execute unless score '+GT+' bpb matches 1 run function '+ns+':misure/accendi'];
   F.show=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 1',ACT];
@@ -2089,7 +2095,7 @@ async function dataPack(B,v,onProgress){
   if(BIG)F.all=[say(T('{0} ha {1} blocchi: il fantasma completo metterebbe in difficoltà il gioco, quindi qui è disattivato. Usa i livelli con :next e :prev.',name,NUM(B.total)),'yellow')];
   else{F.all=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT];
   for(let y=0;y<Y;y++)F.all.push('execute at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1));
-  F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,ns)));}
+  F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,'bpb')));}
   F.clear=['kill @e[type=block_display,tag='+G+']','kill @e[type=block_display,tag='+GM+']','kill @e[type=marker,tag='+O+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',say(T('Fantasma di "{0}" rimosso.',name),'yellow')];
   // costruzioni grandi: i controlli partono da ogni giocatore e guardano solo i fantasmi entro 16 blocchi
   const AT=BIG?'at @a ':'';
@@ -2117,9 +2123,11 @@ async function dataPack(B,v,onProgress){
   F.done=['scoreboard players set '+ON+' bpb 3',
     'execute store result score '+N+' bpb if entity @e[type=block_display,tag='+R+']',
     'execute if score '+N+' bpb matches 1.. run tellraw @a '+q([{text:T('Fantasmi arancioni rimasti: '),color:'gold'},{score:{name:N,objective:'bpb'},color:'gold'},{text:T(' (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.'),color:'gold'}]),
-    'execute if score '+L+' bpb matches ..'+(Y-2)+' run '+say(T('Livello completato! Scrivi /function {0}:next per il prossimo.',ns),'gold'),
+    'execute if score '+L+' bpb matches ..'+(Y-2)+' run '+say(T('Livello completato! Scrivi /function {0}:next per il prossimo.','bpb'),'gold'),
     'execute if score '+L+' bpb matches '+(Y-1)+' run '+say(T('Costruzione finita: "{0}" è completa!',name),'gold')];
   F.libero=['tag @s remove '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:-1}'];
+  const SHORT=['start','next','prev','all','show','clear','attrezzi','materiali','mancano','misure'];
+  for(const c of SHORT)F['cmd/'+c]=['execute if score #attivo bpb matches '+ID+' run function '+ns+':'+c];
   const tagVals=[];
   const FLUID=new Set(['minecraft:water','minecraft:lava']);
   const RENB={'minecraft:chain':'minecraft:iron_chain','minecraft:iron_chain':'minecraft:chain','minecraft:grass':'minecraft:short_grass','minecraft:short_grass':'minecraft:grass'};
@@ -2151,6 +2159,8 @@ async function dataPack(B,v,onProgress){
     LAY.forEach((e,y)=>files.push({name:'data/'+ns+'/'+dir+'/layer/'+(y+1)+'.mcfunction',...e}));
     files.push({name:'data/'+ns+'/tags/'+dir+'/checks.json',data:te.encode(JSON.stringify({values:tagVals}))});
     files.push({name:'data/'+ns+'/tags/'+bdir+'/vuoto.json',data:te.encode(JSON.stringify(VUOTO))});
+    for(const c of SHORT){files.push({name:'data/bpb/'+dir+'/'+c+'.mcfunction',data:te.encode('function #bpb:cmd/'+c+'\n')});
+      files.push({name:'data/bpb/tags/'+dir+'/cmd/'+c+'.json',data:te.encode(JSON.stringify({values:[{id:ns+':cmd/'+c,required:false}]}))});}
     files.push({name:'data/minecraft/tags/'+dir+'/tick.json',data:te.encode(JSON.stringify({values:[ns+':tick']}))});
     files.push({name:'data/minecraft/tags/'+dir+'/load.json',data:te.encode(JSON.stringify({values:[ns+':load']}))});}
   return zipC(files);
@@ -2309,7 +2319,7 @@ function selectBuild(id,layer){
       if(s){const sm=document.createElement('small');sm.textContent=s;d.appendChild(sm);}$('bStats').appendChild(d);});
   $('tips').innerHTML='';B.tips.forEach(t=>{const li=document.createElement('li');const sp=document.createElement('span');sp.textContent=t;li.appendChild(sp);$('tips').appendChild(li);});
   $('lvRange').max=B.Y;$('lvTot').textContent=B.Y;
-  document.querySelectorAll('.dpcmd').forEach(el=>{el.textContent='/function '+dpNs(B)+':'+el.dataset.f;});
+  document.querySelectorAll('.dpcmd').forEach(el=>{el.textContent='/function '+(el.dataset.ns==='own'?dpNs(B):'bpb')+':'+el.dataset.f;});
   $('rmImp').hidden=!B.imported;$('rmImp').textContent=T('Rimuovi questo file dalla libreria');rmArmed=false;
   renderStyle();renderView();if(T3)frame3D('iso');renderGrid();renderStep();renderMats();renderLayers();renderFeet();renderPdfOpt(PDFO.bid!==B.id);notifyRemote();
 }
