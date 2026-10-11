@@ -1753,6 +1753,7 @@ function applyExcl(B){
   for(const k in VC)if(k.startsWith(B.id+'|'))delete VC[k];
   return true;
 }
+const SOFTTERRAIN=/^(sand|red_sand|gravel|clay|snow|powder_snow|mud|calcite)$/;
 const terrainKeys=B=>{const ks=new Set();if(B.orig)for(const t of B.orig.arr)if(t){const k=matKey(t);if(TERRAIN.test(k))ks.add(k);}return ks;};
 /* salvataggio delle importazioni nel browser */
 function b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
@@ -2103,7 +2104,7 @@ async function importFile(f){
     const r=parseStructure(root);
     const base=f.name.replace(/\.[^.]+$/,'');
     const B=buildFromCells('imp-'+Date.now().toString(36),(r.meta||base).slice(0,60),f.name,r.X,r.Y,r.Z,r.cells,r.dv);
-    const tk=terrainKeys(B);let terr=0;
+    const tk=new Set([...terrainKeys(B)].filter(k=>!SOFTTERRAIN.test(k)));let terr=0;
     if(tk.size&&groundTop(B.orig,t=>tk.has(matKey(t)))>=0){B.excl=tk;if(applyExcl(B))terr=B.exclRows.reduce((a,r)=>a+r.n,0);else{B.excl=new Set();applyExcl(B);}}
     BUILDS.push(B);makeCard(B);fillTags();
     B.t=Date.now();const saved=await saveImport(B);
@@ -2381,7 +2382,8 @@ async function makeManual(){
   footer(page);
   // pagine dei livelli
   const heavy=B.total>40000;
-  const[A]=rdims(v,S.rot);const cpx=Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
+  // per le costruzioni molto larghe la griglia stampata ha comunque blocchi minuscoli: si usa un'immagine più leggera
+  const[A]=rdims(v,S.rot);const cpx=A>200?Math.max(3,Math.floor(1300/(A+1.3))):Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
   const front=frontSide(B,v,S.rot);
   for(let ly=0;ly<v.Y;ly++){
     dlMsg(T('Creo il manuale: livello {0} di {1}…',ly+1,v.Y));await tick();
@@ -2394,7 +2396,8 @@ async function makeManual(){
       doc.addImage(th.toDataURL('image/png'),'PNG',PW-M-58,10,58,58*220/300,undefined,'FAST');}
     const gc=document.createElement('canvas');const gg=drawGrid(gc,v,ly,S.rot,cpx,PRINT,null,1);
     const maxW=CW,maxH=150,sc=Math.min(maxW/gg.cw,maxH/gg.ch);const gw=gg.cw*sc,gh=gg.ch*sc,gy=56;
-    doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
+    if(gc.width*gc.height>1.2e6||A>200)doc.addImage(gc.toDataURL('image/jpeg',.82),'JPEG',M,gy,gw,gh);
+    else doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
     let yy=gy+gh+5;doc.setFontSize(8);doc.setTextColor(110);
     doc.text(T('In grigio chiaro il livello sotto. ½ = lastra. Freccia bianca = lato alto delle scale. Righe spesse ogni 5 blocchi.'),M,yy);yy+=7;
     matTable(countMats(v.layers[ly]),yy,280,T('Materiali di questo livello'));
