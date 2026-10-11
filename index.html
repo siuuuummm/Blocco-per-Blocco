@@ -161,6 +161,11 @@ h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.2
 .exports p{margin:0;font-size:.82rem;color:var(--muted)}
 .howto{font-size:.84rem}
 .howto summary{cursor:pointer;color:var(--grass);font-weight:700}
+.pdfopt{margin-top:10px}
+.opt-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
+.opt-row label{display:inline-flex;align-items:center;gap:4px}
+.opt-h{font-weight:700;min-width:11ch}
+.opt-row input[type=number]{width:6.5em}
 .howto ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .howto p{margin-top:8px}
 .howto code{font-family:var(--f-mono);font-size:.76rem;background:var(--sunk);border:1px solid var(--line);border-radius:3px;padding:0 5px;overflow-wrap:anywhere;user-select:all}
@@ -363,6 +368,20 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
           <button type="button" id="dlPack">Fantasma vanilla (data pack)</button>
         </div>
         <p class="feet" id="feetRow" hidden><span id="feetTxt"></span> <label>Livelli sotto i piedi <input type="number" id="feetIn" min="0" step="1" inputmode="numeric"></label></p>
+        <details class="howto pdfopt" id="pdfOpt">
+          <summary>Opzioni del manuale PDF</summary>
+          <div class="opt-row"><span class="opt-h">Livelli</span>
+            <label><input type="radio" name="pdfL" value="all" checked> Tutti</label>
+            <label><input type="radio" name="pdfL" value="cur"> Solo quello aperto</label>
+            <label><input type="radio" name="pdfL" value="span"> Da</label> <input type="number" id="pdfFrom" min="1" step="1" inputmode="numeric" aria-label="Dal livello"> <span>a</span> <input type="number" id="pdfTo" min="1" step="1" inputmode="numeric" aria-label="Al livello"></div>
+          <div class="opt-row"><span class="opt-h">Griglia</span>
+            <label><input type="radio" name="pdfG" value="layer"> Livello intero</label>
+            <label><input type="radio" name="pdfG" value="chunk"> Anche a chunk 16 × 16, ingranditi</label></div>
+          <div class="opt-row"><span class="opt-h">Coordinate dell'angolo</span>
+            <label>X <input type="number" id="pdfX" step="1" inputmode="numeric"></label> <label>Z <input type="number" id="pdfZ" step="1" inputmode="numeric"></label></div>
+          <p>Facoltative: se scrivi le coordinate del blocco dove fai partire la costruzione (in gioco con F3), i chunk del manuale coincidono con quelli del mondo e le pagine indicano le coordinate vere.</p>
+          <p id="pdfEst" aria-live="polite"></p>
+        </details>
         <p id="dlMsg" aria-live="polite">Il manuale ha una pagina per livello. Lo zip contiene .litematic per Litematica, .schem per WorldEdit e .nbt per il blocco struttura.</p>
         <details class="howto">
           <summary>Come usare il fantasma senza mod</summary>
@@ -804,7 +823,38 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Lo spazio occupato dalla struttura è troppo grande ({0} posti, larghezza × profondità × altezza): qui il limite è {1}. Prova a dividerla in parti.": "The space taken by the structure is too large ({0} positions, width × depth × height): the limit here is {1}. Try splitting it into parts.",
 "Scaricato. Costruzione molto grande: in gioco il fantasma completo (:all) è disattivato e i fantasmi si controllano solo entro 16 blocchi da te. Il primo /reload può richiedere qualche secondo.": "Downloaded. Very large build: in the game the full ghost (:all) is turned off and ghosts are only checked within 16 blocks of you. The first /reload may take a few seconds.",
 "{0} ha {1} blocchi: il fantasma completo metterebbe in difficoltà il gioco, quindi qui è disattivato. Usa i livelli con :next e :prev.": "{0} has {1} blocks: the full ghost would slow the game down too much, so it is turned off here. Use the layers with :next and :prev.",
-"Preparo il data pack… livello {0} di {1}": "Preparing the data pack… layer {0} of {1}"
+"Preparo il data pack… livello {0} di {1}": "Preparing the data pack… layer {0} of {1}",
+"Opzioni del manuale PDF": "PDF manual options",
+"Solo quello aperto": "Only the open one",
+"Da": "From",
+"a": "to",
+"Griglia": "Grid",
+"Livello intero": "Whole layer",
+"Anche a chunk 16 × 16, ingranditi": "Also as 16 × 16 chunks, enlarged",
+"Coordinate dell'angolo": "Corner coordinates",
+"Facoltative: se scrivi le coordinate del blocco dove fai partire la costruzione (in gioco con F3), i chunk del manuale coincidono con quelli del mondo e le pagine indicano le coordinate vere.": "Optional: if you enter the coordinates of the block where you start the build (shown in game with F3), the manual's chunks match the world's chunks and the pages show the real coordinates.",
+"Dal livello": "From layer",
+"Al livello": "To layer",
+"Chunk {0}, {1}": "Chunk {0}, {1}",
+"Chunk {0}{1}": "Chunk {0}{1}",
+"X da {0} a {1} · Z da {2} a {3}": "X from {0} to {1} · Z from {2} to {3}",
+"colonne x {0}–{1} · righe z {2}–{3}": "x columns {0}–{1} · z rows {2}–{3}",
+"Copertina e materiali": "Cover and materials",
+"In arancione i chunk 16 × 16: nelle pagine seguenti ognuno è ingrandito. In gioco F3+G mostra i confini dei chunk.": "In orange the 16 × 16 chunks: the following pages enlarge each one. In game, F3+G shows chunk borders.",
+"Creo il manuale: livello {0} di {1}, chunk {2} di {3}…": "Creating the manual: layer {0} of {1}, chunk {2} of {3}…",
+"Livello {0} di {1} · chunk": "Layer {0} of {1} · chunks",
+"Materiali di questo chunk": "Materials for this chunk",
+"Materiali di questi chunk": "Materials for these chunks",
+"Il manuale avrà circa {0} pagina.": "The manual will have about {0} page.",
+"Il manuale avrà circa {0} pagine.": "The manual will have about {0} pages.",
+"Sono tante: puoi scegliere solo alcuni livelli.": "That's a lot: you can pick only some layers.",
+"Nord in alto, est a destra: come la mappa del gioco.": "North at the top, east to the right: like the game's map.",
+"Il manuale avrebbe circa {0} pagine e richiederebbe qualche minuto. Scegli i livelli nelle opzioni qui sotto, oppure premi di nuovo «Manuale PDF» per crearlo comunque.": "The manual would have about {0} pages and take a few minutes. Choose the layers in the options below, or press “PDF manual” again to create it anyway.",
+"parte {0} di {1}": "part {0} of {1}",
+"Creo il manuale, {0} (livelli {1}–{2})…": "Creating the manual, {0} (layers {1}–{2})…",
+"_livelli_{0}-{1}": "_layers_{0}-{1}",
+"Scaricato: il manuale è diviso in {0} PDF (uno ogni circa 200 pagine), raccolti in uno zip.": "Downloaded: the manual is split into {0} PDFs (one every 200 pages or so), collected in a zip.",
+"Verrà diviso in più PDF da circa 200 pagine, raccolti in uno zip.": "It will be split into several PDFs of about 200 pages, collected in a zip."
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -2238,7 +2288,7 @@ function selectBuild(id,layer){
   $('lvRange').max=B.Y;$('lvTot').textContent=B.Y;
   document.querySelectorAll('.dpcmd').forEach(el=>{el.textContent='/function '+dpNs(B)+':'+el.dataset.f;});
   $('rmImp').hidden=!B.imported;$('rmImp').textContent=T('Rimuovi questo file dalla libreria');rmArmed=false;
-  renderStyle();renderView();if(T3)frame3D('iso');renderGrid();renderStep();renderMats();renderLayers();renderFeet();notifyRemote();
+  renderStyle();renderView();if(T3)frame3D('iso');renderGrid();renderStep();renderMats();renderLayers();renderFeet();renderPdfOpt(PDFO.bid!==B.id);notifyRemote();
 }
 function setLayer(n){const B=S.B;const nl=Math.max(0,Math.min(B.Y-1,n));if(nl===S.layer)return;S.layer=nl;S.hover=null;store.set('bpb-layer-'+B.id,S.layer);
   renderView();renderGrid();renderStep();renderMats();renderLayers();notifyRemote();}
@@ -2267,23 +2317,28 @@ function drawCell(g,d,x,y,c,rot,acc){
       g.beginPath();g.moveTo(cx+vx*L,cy+vz*L);g.lineTo(cx-vx*L*.6+px*L*.7,cy-vz*L*.6+pz*L*.7);g.lineTo(cx-vx*L*.6-px*L*.7,cy-vz*L*.6-pz*L*.7);g.closePath();g.stroke();g.fill();}
     g.restore();}
 }
-function drawGrid(cv,v,layer,rot,c,col,hover,dpr){
-  const[A,D]=rdims(v,rot),m=Math.round(Math.max(c,10)*1.1),cw=m+A*c+2,ch=m+D*c+2;
+// reg (facoltativo): solo un rettangolo della griglia {a0,b0,a1,b1}, con i numeri delle colonne e delle righe veri
+function drawGrid(cv,v,layer,rot,c,col,hover,dpr,reg){
+  const[FA,FD]=rdims(v,rot),R0=reg||{a0:0,b0:0,a1:FA,b1:FD},A=R0.a1-R0.a0,D=R0.b1-R0.b0,inR=(a,b)=>a>=R0.a0&&a<R0.a1&&b>=R0.b0&&b<R0.b1;
+  const m=Math.round(Math.max(c,10)*1.1),cw=m+A*c+2,ch=m+D*c+2;
   cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.imageSmoothingEnabled=false;g.clearRect(0,0,cw,ch);
   if(col.bg){g.fillStyle=col.bg;g.fillRect(0,0,cw,ch);}
   g.fillStyle=col.muted;g.font='500 '+Math.max(9,Math.min(12,Math.round(c*.4)))+'px "JetBrains Mono",monospace';g.textAlign='center';g.textBaseline='middle';
   const every=c>=22?1:c>=11?5:10;
-  for(let a=0;a<A;a++)if(every===1||a===0||(a+1)%every===0)g.fillText(String(a+1),m+a*c+c/2,m/2);
-  for(let b=0;b<D;b++)if(every===1||b===0||(b+1)%every===0)g.fillText(String(b+1),m/2,m+b*c+c/2);
+  const la=R0.la||(a=>a+1),lb=R0.lb||(b=>b+1);
+  if(R0.la)g.font='500 '+Math.max(8,Math.min(11,Math.round(c*.34)))+'px "JetBrains Mono",monospace';
+  for(let a=0;a<A;a++){const n=la(R0.a0+a);if(every===1||a===0||n%every===0)g.fillText(String(n),m+a*c+c/2,m/2);}
+  for(let b=0;b<D;b++){const n=lb(R0.b0+b);if(every===1||b===0||n%every===0)g.fillText(String(n),m/2,m+b*c+c/2);}
   g.fillStyle=col.sunk;g.fillRect(m,m,A*c,D*c);
   // i bordi dei blocchi si disegnano tutti insieme alla fine: uno per blocco è lentissimo con livelli da decine di migliaia di blocchi
   const edge=(acc,alpha)=>{g.globalAlpha=alpha;g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=1;g.stroke(acc);g.globalAlpha=1;};
-  if(layer>0){const acc=new Path2D();g.globalAlpha=.22;for(const cell of v.layers[layer-1]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot,acc);}g.globalAlpha=1;edge(acc,.22);}
-  {const acc=new Path2D();for(const cell of v.layers[layer]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot,acc);}edge(acc,1);}
+  if(layer>0){const acc=new Path2D();g.globalAlpha=.22;for(const cell of v.layers[layer-1]){const[a,b]=toR(v,rot,cell.x,cell.z);if(!reg||inR(a,b))drawCell(g,getDef(cell.id),m+(a-R0.a0)*c,m+(b-R0.b0)*c,c,rot,acc);}g.globalAlpha=1;edge(acc,.22);}
+  {const acc=new Path2D();for(const cell of v.layers[layer]){const[a,b]=toR(v,rot,cell.x,cell.z);if(!reg||inR(a,b))drawCell(g,getDef(cell.id),m+(a-R0.a0)*c,m+(b-R0.b0)*c,c,rot,acc);}edge(acc,1);}
   const minor=c>=6;
-  for(let a=0;a<=A;a++){if(!minor&&a%5)continue;g.beginPath();g.strokeStyle=a%5===0?col.strong:col.line;g.lineWidth=a%5===0?1.4:.8;g.moveTo(m+a*c,m);g.lineTo(m+a*c,m+D*c);g.stroke();}
-  for(let b=0;b<=D;b++){if(!minor&&b%5)continue;g.beginPath();g.strokeStyle=b%5===0?col.strong:col.line;g.lineWidth=b%5===0?1.4:.8;g.moveTo(m,m+b*c);g.lineTo(m+A*c,m+b*c);g.stroke();}
+  const thick=R0.thick||(n=>n%5===0);
+  for(let a=0;a<=A;a++){const t=thick(R0.a0+a,'a');if(!minor&&!t)continue;g.beginPath();g.strokeStyle=t?col.strong:col.line;g.lineWidth=t?1.4:.8;g.moveTo(m+a*c,m);g.lineTo(m+a*c,m+D*c);g.stroke();}
+  for(let b=0;b<=D;b++){const t=thick(R0.b0+b,'b');if(!minor&&!t)continue;g.beginPath();g.strokeStyle=t?col.strong:col.line;g.lineWidth=t?1.4:.8;g.moveTo(m,m+b*c);g.lineTo(m+A*c,m+b*c);g.stroke();}
   if(hover){const[a,b]=hover;g.strokeStyle=col.accent;g.lineWidth=2.5;g.strokeRect(m+a*c+1,m+b*c+1,c-2,c-2);}
   return{c,m,A,D,cw,ch};
 }
@@ -2402,12 +2457,34 @@ function loadJsPDF(){
     s.onload=()=>window.jspdf?res(window.jspdf.jsPDF):rej(new Error('pdf'));s.onerror=()=>rej(new Error('pdf'));document.head.appendChild(s);});
 }
 const tick=()=>new Promise(r=>setTimeout(r,0));
-async function makeManual(){
+/* chunk 16×16: allineati ai chunk veri del mondo se si indicano le coordinate dell'angolo, altrimenti a partire dall'angolo */
+const PDFO={layers:'all',from:1,to:1,grid:'layer',x:null,z:null};
+const colName=n=>{let s='';n++;while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;};
+function chunkTiles(v,ly,o){
+  const has=o.x!=null&&o.z!=null,ox=has?((o.x%16)+16)%16:0,oz=has?((o.z%16)+16)%16:0,map=new Map();
+  for(const c of v.layers[ly]){const tx=Math.floor((c.x+ox)/16),tz=Math.floor((c.z+oz)/16),k=tx+','+tz;let t=map.get(k);if(!t){t={tx,tz,cells:[]};map.set(k,t);}t.cells.push(c);}
+  const out=[...map.values()].sort((p,q)=>p.tz-q.tz||p.tx-q.tx);
+  for(const t of out){t.x0=Math.max(0,t.tx*16-ox);t.x1=Math.min(v.X-1,t.tx*16-ox+15);t.z0=Math.max(0,t.tz*16-oz);t.z1=Math.min(v.Z-1,t.tz*16-oz+15);
+    t.name=has?T('Chunk {0}, {1}',Math.floor((o.x+t.x0)/16),Math.floor((o.z+t.z0)/16)):T('Chunk {0}{1}',colName(t.tx),t.tz+1);
+    t.where=has?T('X da {0} a {1} · Z da {2} a {3}',o.x+t.x0,o.x+t.x1,o.z+t.z0,o.z+t.z1):T('colonne x {0}–{1} · righe z {2}–{3}',t.x0+1,t.x1+1,t.z0+1,t.z1+1);}
+  return out;
+}
+function tileReg(v,rot,t){const p=toR(v,rot,t.x0,t.z0),q=toR(v,rot,t.x1,t.z1);return{a0:Math.min(p[0],q[0]),a1:Math.max(p[0],q[0])+1,b0:Math.min(p[1],q[1]),b1:Math.max(p[1],q[1])+1};}
+function pdfLayers(B){const Y=B.Y;if(PDFO.layers==='cur')return[S.layer];
+  if(PDFO.layers==='span'){const a=Math.max(1,Math.min(Y,PDFO.from|0||1)),b=Math.max(1,Math.min(Y,PDFO.to|0||Y));const L=[];for(let y=Math.min(a,b);y<=Math.max(a,b);y++)L.push(y-1);return L;}
+  return[...Array(Y).keys()];}
+function pdfEstimate(){const B=S.B,v=V(),L=pdfLayers(B);let n=1;
+  for(const ly of L){n++;if(PDFO.grid==='chunk')n+=Math.ceil(chunkTiles(v,ly,PDFO).length/4);}return n;}
+const ICA={};let ICN=0;
+// le immagini delle griglie vanno nel PDF come JPEG: la libreria le inserisce così come sono, mentre i PNG li ricomprime (lentissimo)
+const jpg=cv=>cv.toDataURL('image/jpeg',.85);
+// opt: layers (quali livelli), cover (con la copertina), label (es. "parte 2 di 9")
+async function makeManual(opt){opt=opt||{};const withCover=opt.cover!==false;
   const jsPDF=await loadJsPDF();
   const B=S.B,v=V(),doc=new jsPDF({unit:'mm',format:'a4',compress:true});
   const M=14,PW=210,CW=PW-2*M;
   const PRINT={bg:'#ffffff',muted:'#5a655d',line:'#d3dad0',strong:'#8d998a',sunk:'#f3f6f0',accent:'#3a7628'};
-  const footer=(n)=>{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);doc.text('Blocco per Blocco · '+B.name,M,290);doc.text(String(n),PW-M,290,{align:'right'});};
+  const footer=(n)=>{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);doc.text('Blocco per Blocco · '+B.name+(opt.label?' · '+opt.label:''),M,290);doc.text(String(n),PW-M,290,{align:'right'});};
   let page=1;
   const matTable=(rows,y,maxY,title)=>{
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30);doc.text(title,M,y);y+=5;
@@ -2415,7 +2492,8 @@ async function makeManual(){
     for(const r of rows){
       if(yy+rowH>maxY){if(col===0){col=1;yy=y;}else{footer(page);doc.addPage();page++;y=20;yy=y;col=0;maxY=280;}}
       const x=M+col*colW;
-      try{doc.addImage(icon(r.id),'PNG',x,yy-4.2,5,5);}catch(e){}
+      // ogni icona si elabora una volta sola: con il nome (alias) la libreria riusa quella già inserita
+      try{doc.addImage(icon(r.id),'PNG',x,yy-4.2,5,5,'ic'+(ICA[r.id]||(ICA[r.id]=++ICN)));}catch(e){}
       doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30);
       const nm=doc.splitTextToSize(r.d.name,colW-38)[0];doc.text(nm,x+7,yy);
       doc.setFont('helvetica','bold');doc.text(String(r.n),x+colW-22,yy,{align:'right'});
@@ -2423,6 +2501,7 @@ async function makeManual(){
       yy+=rowH;}
     return col===0?yy:maxY;
   };
+  if(withCover){
   // copertina
   doc.setFont('helvetica','bold');doc.setFontSize(24);doc.setTextColor(26,33,28);doc.text(doc.splitTextToSize(B.name,CW),M,24);
   doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(58,118,40);
@@ -2430,7 +2509,7 @@ async function makeManual(){
   doc.setFontSize(10.5);doc.setTextColor(80);const dl=doc.splitTextToSize(B.desc,CW);doc.text(dl,M,39);
   let y=39+dl.length*5+2;
   const hero=document.createElement('canvas');renderIso(hero,v,{mode:'full',rot:2,size:[760,470],dpr:2,pad:.9,bg:'#f3f6f0'});
-  doc.addImage(hero.toDataURL('image/png'),'PNG',M,y,CW,CW*470/760,undefined,'FAST');y+=CW*470/760+7;
+  doc.addImage(jpg(hero),'JPEG',M,y,CW,CW*470/760);y+=CW*470/760+7;
   doc.setFontSize(10);doc.setTextColor(40);
   doc.text(T('Dimensioni {0} × {1} × {2} (larghezza × profondità × altezza) · {3} blocchi · {4} livelli',v.X,v.Z,v.Y,B.total,v.Y),M,y);y+=5;
   if(B.slots.length){doc.setTextColor(100);doc.text(T('Stile: ')+B.slots.map(s=>T(SLOTNAME[s])+' '+(s[0]==='W'?woodLabel(S.st[s]):s[0]==='S'?stoneLabel(S.st[s]):colorLabel(S.st[s]))).join(' · '),M,y,{maxWidth:CW});y+=5;}
@@ -2441,35 +2520,94 @@ async function makeManual(){
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30);doc.text(T('Note e consigli'),M,y);y+=5;
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(60);
     for(const n of notes){const l=doc.splitTextToSize('- '+n,CW);if(y+l.length*4.5>282){footer(page);doc.addPage();page++;y=20;}doc.text(l,M,y);y+=l.length*4.5+1;}}
-  footer(page);
+  footer(page);}
   // pagine dei livelli
   const heavy=B.total>40000;
+  const CH=PDFO.grid==='chunk',ROT=CH?0:S.rot;
   // per le costruzioni molto larghe la griglia stampata ha comunque blocchi minuscoli: si usa un'immagine più leggera
-  const[A]=rdims(v,S.rot);const cpx=A>200?Math.max(3,Math.floor(1300/(A+1.3))):Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
-  const front=frontSide(B,v,S.rot);
-  for(let ly=0;ly<v.Y;ly++){
+  const[A]=rdims(v,ROT);const cpx=A>200?Math.max(3,Math.floor(1300/(A+1.3))):Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
+  const front=CH?T('Nord in alto, est a destra: come la mappa del gioco.'):frontSide(B,v,S.rot);
+  const LAY=opt.layers||pdfLayers(B);let fresh=!withCover;
+  const outline=(title,pg)=>{try{if(doc.outline)doc.outline.add(null,title,{pageNumber:pg});}catch(e){}};
+  if(withCover)outline(T('Copertina e materiali'),1);
+  for(const ly of LAY){
     dlMsg(T('Creo il manuale: livello {0} di {1}…',ly+1,v.Y));await tick();
-    doc.addPage();page++;
+    if(fresh)fresh=false;else{doc.addPage();page++;}outline(T('Livello {0}',ly+1),page);
     doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(26,33,28);doc.text(T('Livello {0} di {1}',ly+1,v.Y),M,22);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(90);
     doc.text(T('{0} blocchi in questo livello',v.layers[ly].length),M,29);
     if(front)doc.text(front,M,34,{maxWidth:118});
     if(!heavy){const th=document.createElement('canvas');renderIso(th,v,{mode:'upto',layer:ly,rot:2,size:[300,220],dpr:2,pad:.9,fog:'rgba(255,255,255,.6)',bg:'#f3f6f0'});
-      doc.addImage(th.toDataURL('image/png'),'PNG',PW-M-58,10,58,58*220/300,undefined,'FAST');}
-    const gc=document.createElement('canvas');const gg=drawGrid(gc,v,ly,S.rot,cpx,PRINT,null,1);
+      doc.addImage(jpg(th),'JPEG',PW-M-58,10,58,58*220/300);}
+    const gc=document.createElement('canvas');const gg=drawGrid(gc,v,ly,ROT,cpx,PRINT,null,1);
+    const tiles=CH?chunkTiles(v,ly,PDFO):[];
+    if(CH){ // confini e nomi dei chunk sulla pianta del livello
+      const g=gc.getContext('2d');g.save();g.strokeStyle='#c98a12';g.lineWidth=Math.max(1.5,cpx/5);g.fillStyle='rgba(201,138,18,.9)';
+      g.font='700 '+Math.round(Math.max(11,Math.min(44,cpx*16*.26)))+'px helvetica,sans-serif';g.textAlign='center';g.textBaseline='middle';
+      for(const t of tiles){const r=tileReg(v,ROT,t),x=gg.m+r.a0*cpx,y=gg.m+r.b0*cpx,w=(r.a1-r.a0)*cpx,h=(r.b1-r.b0)*cpx;g.strokeRect(x,y,w,h);
+        const lab=t.name.replace(/^Chunk /,'');g.lineWidth=3;g.strokeStyle='rgba(255,255,255,.85)';g.strokeText(lab,x+w/2,y+h/2);g.fillText(lab,x+w/2,y+h/2);g.lineWidth=Math.max(1.5,cpx/5);g.strokeStyle='#c98a12';}
+      g.restore();}
     const maxW=CW,maxH=150,sc=Math.min(maxW/gg.cw,maxH/gg.ch);const gw=gg.cw*sc,gh=gg.ch*sc,gy=56;
-    if(gc.width*gc.height>1.2e6||A>200)doc.addImage(gc.toDataURL('image/jpeg',.82),'JPEG',M,gy,gw,gh);
-    else doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
+    doc.addImage(gc.width*gc.height>1.2e6||A>200?gc.toDataURL('image/jpeg',.82):jpg(gc),'JPEG',M,gy,gw,gh);
     let yy=gy+gh+5;doc.setFontSize(8);doc.setTextColor(110);
     doc.text(T('In grigio chiaro il livello sotto. ½ = lastra. Freccia bianca = lato alto delle scale. Righe spesse ogni 5 blocchi.'),M,yy);yy+=7;
+    if(CH){doc.text(T('In arancione i chunk 16 × 16: nelle pagine seguenti ognuno è ingrandito. In gioco F3+G mostra i confini dei chunk.'),M,yy);yy+=6;}
     matTable(countMats(v.layers[ly]),yy,280,T('Materiali di questo livello'));
     footer(page);
+    // pagine dei chunk: quattro per pagina, con i materiali di quei quattro
+    for(let i=0;i<tiles.length;i+=4){const four=tiles.slice(i,i+4);
+      if(i%40===0){dlMsg(T('Creo il manuale: livello {0} di {1}, chunk {2} di {3}…',ly+1,v.Y,i+1,tiles.length));await tick();}
+      doc.addPage();page++;
+      doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(26,33,28);doc.text(T('Livello {0} di {1} · chunk',ly+1,v.Y),M,16);
+      const TW=(CW-6)/2,TH=TW+11;
+      four.forEach((t,j)=>{const x=M+(j%2)*(TW+6),y=22+Math.floor(j/2)*(TH+8);
+        doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(30);doc.text(t.name,x,y+4);
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100);doc.text(t.where+' · '+T(t.cells.length===1?'{0} blocco':'{0} blocchi',t.cells.length),x,y+8.5);
+        // numeri sui lati: coordinate vere del mondo se indicate, altrimenti colonna x e riga z della costruzione
+        const has=PDFO.x!=null,reg=tileReg(v,0,t);reg.la=a=>has?PDFO.x+a:a+1;reg.lb=b=>has?PDFO.z+b:b+1;
+        // righe spesse ogni 4 blocchi, allineate ai chunk: un chunk è diviso in 4 × 4 quadrati
+        reg.thick=(n,ax)=>(((ax==='a'?(has?PDFO.x:0):(has?PDFO.z:0))+n)%4+4)%4===0;
+        const tc=document.createElement('canvas'),tg=drawGrid(tc,v,ly,0,22,PRINT,null,1,reg);
+        const k=TW/(tg.m+16*22+2);doc.addImage(jpg(tc),'JPEG',x,y+10.5,tg.cw*k,tg.ch*k);});
+      matTable(countMats(four.flatMap(t=>t.cells)),22+Math.ceil(four.length/2)*(TH+8)+4,280,four.length===1?T('Materiali di questo chunk'):T('Materiali di questi chunk'));
+      footer(page);}
   }
   return doc.output('blob');
 }
+function renderPdfOpt(fresh){const B=S.B;
+  if(fresh){PDFO.bid=B.id;PDFO.x=PDFO.z=null;$('pdfX').value='';$('pdfZ').value='';PDFO.layers='all';PDFO.from=1;PDFO.to=B.Y;PDFO.grid=Math.max(B.X,B.Z)>48?'chunk':'layer';
+    document.querySelectorAll('input[name=pdfL]').forEach(r=>{r.checked=r.value==='all';});document.querySelectorAll('input[name=pdfG]').forEach(r=>{r.checked=r.value===PDFO.grid;});
+    $('pdfFrom').value=1;$('pdfTo').value=B.Y;}
+  $('pdfFrom').max=$('pdfTo').max=B.Y;
+  if($('pdfOpt').open||!fresh){const n=pdfEstimate();$('pdfEst').textContent=T(n===1?'Il manuale avrà circa {0} pagina.':'Il manuale avrà circa {0} pagine.',NUM(n))+(n>250?' '+T('Verrà diviso in più PDF da circa 200 pagine, raccolti in uno zip.'):'');}}
+const readPdfOpt=()=>{PDFO.layers=(document.querySelector('input[name=pdfL]:checked')||{}).value||'all';PDFO.grid=(document.querySelector('input[name=pdfG]:checked')||{}).value||'layer';
+  PDFO.from=parseInt($('pdfFrom').value,10)||1;PDFO.to=parseInt($('pdfTo').value,10)||S.B.Y;
+  const x=parseInt($('pdfX').value,10),z=parseInt($('pdfZ').value,10);PDFO.x=Number.isFinite(x)&&Number.isFinite(z)?x:null;PDFO.z=PDFO.x!=null?z:null;renderPdfOpt(false);};
+$('pdfOpt').addEventListener('change',()=>{pdfArmed=false;readPdfOpt();});$('pdfOpt').addEventListener('toggle',()=>{if($('pdfOpt').open)renderPdfOpt(false);});
+$('pdfFrom').addEventListener('focus',()=>{document.querySelector('input[name=pdfL][value=span]').checked=true;});
+$('pdfTo').addEventListener('focus',()=>{document.querySelector('input[name=pdfL][value=span]').checked=true;});
+let pdfArmed=false;
 $('dlPdf').addEventListener('click',async()=>{
-  const btn=$('dlPdf');btn.disabled=true;dlMsg(T('Creo il manuale…'));
-  try{const blob=await makeManual();await saveFile(slug(S.B.name)+T('_manuale')+'.pdf',blob);}
+  const btn=$('dlPdf');
+  // manuali lunghissimi: prima si avvisa e si aprono le opzioni; un secondo clic lo crea comunque
+  const est=pdfEstimate();
+  if(est>300&&!pdfArmed){pdfArmed=true;$('pdfOpt').open=true;renderPdfOpt(false);
+    dlMsg(T('Il manuale avrebbe circa {0} pagine e richiederebbe qualche minuto. Scegli i livelli nelle opzioni qui sotto, oppure premi di nuovo «Manuale PDF» per crearlo comunque.',NUM(est)));return;}
+  pdfArmed=false;btn.disabled=true;dlMsg(T('Creo il manuale…'));
+  try{
+    // oltre circa 250 pagine il manuale si divide in parti da circa 200, ognuna un PDF a sé, raccolte in uno zip:
+    // un unico PDF enorme rallenta sempre di più e riempie la memoria
+    const B=S.B,v=V(),L=pdfLayers(B),per=ly=>1+(PDFO.grid==='chunk'?Math.ceil(chunkTiles(v,ly,PDFO).length/4):0);
+    if(est<=250){const blob=await makeManual();await saveFile(slug(B.name)+T('_manuale')+'.pdf',blob);}
+    else{const groups=[];let cur=[],n=3;
+      for(const ly of L){const k=per(ly);if(cur.length&&n+k>200){groups.push(cur);cur=[];n=0;}cur.push(ly);n+=k;}if(cur.length)groups.push(cur);
+      const files=[];
+      for(let i=0;i<groups.length;i++){const g=groups[i],lab=T('parte {0} di {1}',i+1,groups.length);
+        dlMsg(T('Creo il manuale, {0} (livelli {1}–{2})…',lab,g[0]+1,g[g.length-1]+1));await tick();
+        const blob=await makeManual({layers:g,cover:i===0,label:lab});
+        files.push({name:slug(B.name)+T('_manuale')+'_'+String(i+1).padStart(2,'0')+T('_livelli_{0}-{1}',g[0]+1,g[g.length-1]+1)+'.pdf',data:new Uint8Array(await blob.arrayBuffer())});}
+      await saveFile(slug(B.name)+T('_manuale')+'.zip',zip(files));
+      dlMsg(T('Scaricato: il manuale è diviso in {0} PDF (uno ogni circa 200 pagine), raccolti in uno zip.',groups.length));}}
   catch(e){dlMsg(e&&e.message==='pdf'?T('Non riesco a caricare il generatore di PDF: controlla la connessione e riprova.'):T('Non sono riuscito a creare il manuale.'));}
   finally{btn.disabled=false;}
 });
