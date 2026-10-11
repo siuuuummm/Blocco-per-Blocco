@@ -800,7 +800,11 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "Firefox per computer per ora non installa i siti come app. Il sito funziona lo stesso anche senza internet dopo la prima visita: aggiungilo ai segnalibri. Per averlo come app con una sua icona usa Chrome, Edge o Chromium.": "Firefox for desktop can't install websites as apps yet. The site still works offline after your first visit: bookmark it. To get it as an app with its own icon, use Chrome, Edge or Chromium.",
 "Cerca nel menu del browser la voce «Installa» o «Aggiungi alla schermata Home».": "Look in your browser's menu for “Install” or “Add to Home screen”.",
 "Aggiornata alla versione {0}. Non serve reinstallare nulla: gli aggiornamenti arrivano da soli.": "Updated to version {0}. No need to reinstall anything: updates arrive by themselves.",
-"Versione {0}": "Version {0}"
+"Versione {0}": "Version {0}",
+"Lo spazio occupato dalla struttura è troppo grande ({0} posti, larghezza × profondità × altezza): qui il limite è {1}. Prova a dividerla in parti.": "The space taken by the structure is too large ({0} positions, width × depth × height): the limit here is {1}. Try splitting it into parts.",
+"Scaricato. Costruzione molto grande: in gioco il fantasma completo (:all) è disattivato e i fantasmi si controllano solo entro 16 blocchi da te. Il primo /reload può richiedere qualche secondo.": "Downloaded. Very large build: in the game the full ghost (:all) is turned off and ghosts are only checked within 16 blocks of you. The first /reload may take a few seconds.",
+"{0} ha {1} blocchi: il fantasma completo metterebbe in difficoltà il gioco, quindi qui è disattivato. Usa i livelli con :next e :prev.": "{0} has {1} blocks: the full ghost would slow the game down too much, so it is turned off here. Use the layers with :next and :prev.",
+"Preparo il data pack… livello {0} di {1}": "Preparing the data pack… layer {0} of {1}"
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -1133,10 +1137,17 @@ function makeBuild(X,Y,Z){
       else if(fillT)this.set(x,y,z,fillT);}},
   };
 }
+/* griglia compatta: per ogni posto del riquadro un numero della palette (2 byte), invece di un riferimento a testo */
+class Vox{
+  constructor(n,pal){this.n=n;this.pal=pal?pal.slice():[null];this.pi=new Map();this.pal.forEach((t,k)=>{if(t)this.pi.set(t,k);});this.idx=new Uint16Array(n);}
+  id(t){let k=this.pi.get(t);if(k==null){k=this.pal.length;this.pal.push(t);this.pi.set(t,k);if(k>65535&&this.idx instanceof Uint16Array)this.idx=Uint32Array.from(this.idx);}return k;}
+  get(i){return this.pal[this.idx[i]];}
+  set(i,t){this.idx[i]=t?this.id(t):0;}
+}
 function finalize(id,meta,b){
   let maxY=0;for(const k of b.data.keys())maxY=Math.max(maxY,+k.split(',')[1]);
-  const Y=maxY+1,arr=new Array(b.X*Y*b.Z).fill(null),layers=[...Array(Y)].map(()=>[]),slots=new Set();
-  for(const[k,v]of b.data){const[x,y,z]=k.split(',').map(Number);arr[(y*b.Z+z)*b.X+x]=v;layers[y].push({x,z,t:v});const s=v.split(':')[0];if(s!=='M')slots.add(s);}
+  const Y=maxY+1,arr=new Vox(b.X*Y*b.Z),layers=[...Array(Y)].map(()=>[]),slots=new Set();
+  for(const[k,v]of b.data){const[x,y,z]=k.split(',').map(Number);arr.set((y*b.Z+z)*b.X+x,v);layers[y].push({x,z,t:v});const s=v.split(':')[0];if(s!=='M')slots.add(s);}
   for(const L of layers)L.sort((p,q)=>p.z-q.z||p.x-q.x);
   const total=layers.reduce((s,L)=>s+L.length,0);
   return{...meta,id,X:b.X,Y,Z:b.Z,arr,layers,total,slots:['W1','W2','S1','S2','C1','C2'].filter(s=>slots.has(s))};
@@ -1459,14 +1470,18 @@ const VC={};
 const DV={n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]};
 function view(B,st){
   const key=B.id+'|'+B.slots.map(s=>st[s]).join(',');if(VC[key])return VC[key];
-  const raw=B.arr.map(t=>t?resolveTok(t,st):null);
-  const at=(x,y,z)=>(x<0||y<0||z<0||x>=B.X||y>=B.Y||z>=B.Z)?null:raw[(y*B.Z+z)*B.X+x];
-  const arr=raw.slice(),layers=[];
+  // lo stile si applica alla palette, non a ogni posto; le staccionate che cambiano forma vanno in una piccola mappa a parte
+  const A=B.arr,rp=A.pal.map(t=>t?resolveTok(t,st):null),idx=A.idx,mod=new Map();
+  const at=(x,y,z)=>(x<0||y<0||z<0||x>=B.X||y>=B.Y||z>=B.Z)?null:rp[idx[(y*B.Z+z)*B.X+x]];
+  let layers;
+  if(B.imported)layers=B.layers; // importazioni: niente stili, si usano direttamente i livelli
+  else{layers=[];
   for(let y=0;y<B.Y;y++)layers.push(B.layers[y].map(c=>{let id=resolveTok(c.t,st);
     if(/^w:[^:]+:fence$/.test(id)){const f=['n','e','s','w'].filter(d=>{const n=at(c.x+DV[d][0],y,c.z+DV[d][1]);return n&&(/:fence(#|$)/.test(n)||getDef(n).solid);}).join('');
-      id=id+'#'+f;arr[(y*B.Z+c.z)*B.X+c.x]=id;}
-    return{x:c.x,z:c.z,id};}));
-  return VC[key]={X:B.X,Y:B.Y,Z:B.Z,layers,get(x,y,z){if(x<0||y<0||z<0||x>=this.X||y>=this.Y||z>=this.Z)return null;return arr[(y*this.Z+z)*this.X+x];}};
+      id=id+'#'+f;mod.set((y*B.Z+c.z)*B.X+c.x,id);}
+    return{x:c.x,z:c.z,id};}));}
+  return VC[key]={X:B.X,Y:B.Y,Z:B.Z,layers,get(x,y,z){if(x<0||y<0||z<0||x>=this.X||y>=this.Y||z>=this.Z)return null;const i=(y*this.Z+z)*this.X+x;
+    if(mod.size){const m=mod.get(i);if(m)return m;}return rp[idx[i]];}};
 }
 
 /* ================= texture di Minecraft caricate dall'utente ================= */
@@ -1535,10 +1550,27 @@ function renderIso(cv,V,o){
     for(let a=0;a<=A;a++){const p=P(a,0,gy),q=P(a,D,gy);g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);}
     for(let b=0;b<=D;b++){const p=P(0,b,gy),q=P(A,b,gy);g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);}g.stroke();}
   const getR=(a,y,b)=>{if(a<0||b<0||a>=A||b>=D||y<0||y>=V.Y||!vis(y))return null;const[x,z]=fromR(V,o.rot,a,b);return V.get(x,y,z);};
-  const list=[];for(let y=0;y<V.Y;y++){if(!vis(y))continue;for(const c of V.layers[y]){const[a,b]=toR(V,o.rot,c.x,c.z);list.push([a,b,y,c.id]);}}
+  // si saltano i blocchi che non si vedono: coperti sopra e sui due lati rivolti verso chi guarda
+  const sol=new Map(),solid=id=>{let v=sol.get(id);if(v==null){v=!!id&&getDef(id).solid;sol.set(id,v);}return v;};
+  const list=[];for(let y=0;y<V.Y;y++){if(!vis(y))continue;for(const c of V.layers[y]){const[a,b]=toR(V,o.rot,c.x,c.z);
+    if(solid(getR(a,y+1,b))&&solid(getR(a+1,y,b))&&solid(getR(a,y,b+1)))continue;list.push([a,b,y,c.id]);}}
   list.sort((p,q)=>(p[0]+p[1]+p[2])-(q[0]+q[1]+q[2])||p[2]-q[2]);
+  if(W<3){ // blocchi di 1-2 pixel (miniature di costruzioni enormi): rettangoli del colore medio, molto più veloci delle facce con texture
+    const rect=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);};
+    for(const[a,b,y,id]of list){const d=getDef(id),c=P(a+.5,b+.5,y+1),fogged=o.mode==='upto'&&y<o.layer&&o.fog;
+      const top=avgCol(fk(d,d.cross?4:0)),sa=avgCol(fk(d,FA[o.rot])),sb=avgCol(fk(d,FB[o.rot]));if(!top)continue;
+      rect(c[0]-W/2,c[1]-W/4,W,W/2,shadeCol(top,0));if(!d.cross){rect(c[0]-W/2,c[1]+W/4,W/2,W/2,shadeCol(sb,.14));rect(c[0],c[1]+W/4,W/2,W/2,shadeCol(sa,.34));}
+      if(fogged)rect(c[0]-W/2,c[1]-W/4,W,W,o.fog);}
+    return;}
   for(const[a,b,y,id]of list)voxel2(g,P,W,a,b,y,getDef(id),getR,(o.mode==='upto'&&y<o.layer)?o.fog:null,o.rot);
 }
+const AVG=new Map();
+function avgCol(key){if(AVG.has(key))return AVG.get(key);let col=null;
+  try{const t=TEX(key),q=t.getContext&&t.getContext('2d');if(q){const dd=q.getImageData(0,0,t.width,t.height).data;let r=0,gg=0,bb=0,n=0;
+    for(let i=0;i<dd.length;i+=4){const al=dd[i+3]/255;r+=dd[i]*al;gg+=dd[i+1]*al;bb+=dd[i+2]*al;n+=al;}
+    if(n>dd.length/4*.15)col=[r/n,gg/n,bb/n];}}catch(e){}
+  AVG.set(key,col);return col;}
+const shadeCol=(c,k)=>c?'rgb('+Math.round(c[0]*(1-k))+','+Math.round(c[1]*(1-k))+','+Math.round(c[2]*(1-k))+')':'transparent';
 const ICON={};
 function icon(id){if(ICON[id])return ICON[id];
   const V={X:1,Y:1,Z:1,layers:[[{x:0,z:0,id}]],get(x,y,z){return x===0&&y===0&&z===0?id:null;}};
@@ -1569,16 +1601,19 @@ function init3D(){
     const controls=new THREE.OrbitControls(camera,isoCv);
     controls.enableDamping=true;controls.dampingFactor=.12;controls.screenSpacePanning=true;controls.maxPolarAngle=Math.PI*.495;
     const group=new THREE.Group();scene.add(group);
-    const t={renderer,scene,camera,controls,group,tex:{},mat:{},dirty:true};
+    const t={renderer,scene,camera,controls,group,tex:{},mat:{},dirty:true,gen:0,lc:{v:null,gen:-1,layers:[]}};
     controls.addEventListener('change',()=>{t.dirty=true;});
     (function loop(){requestAnimationFrame(loop);const moved=controls.update();if(moved||t.dirty){renderer.render(scene,camera);t.dirty=false;}})();
     return t;
   }catch(e){return null;}
 }
 function tex3(key){if(T3.tex[key])return T3.tex[key];const t=new THREE.CanvasTexture(TEX(key));t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;return T3.tex[key]=t;}
-function mat3(key,mode){const k=key+'|'+mode;if(T3.mat[k])return T3.mat[k];
-  return T3.mat[k]=new THREE.MeshBasicMaterial({map:tex3(key),vertexColors:true,side:THREE.DoubleSide,transparent:mode==='t',depthWrite:mode!=='t',alphaTest:mode==='c'?.5:0});}
-function reset3DTex(){if(!T3)return;for(const k in T3.mat)T3.mat[k].dispose();for(const k in T3.tex)T3.tex[k].dispose();T3.mat={};T3.tex={};}
+// dim: i livelli sotto quello corrente sono più scuri; si fa con il colore del materiale, così la forma del livello si calcola una volta sola
+function mat3(key,mode,dim){const k=key+'|'+mode+'|'+(dim||'n');if(T3.mat[k])return T3.mat[k];
+  const m=new THREE.MeshBasicMaterial({map:tex3(key),vertexColors:true,side:THREE.DoubleSide,transparent:mode==='t',depthWrite:mode!=='t',alphaTest:mode==='c'?.5:0});
+  if(dim==='d')m.color.setScalar(.45);return T3.mat[k]=m;}
+function reset3DTex(){if(!T3)return;dropLayerCache();for(const k in T3.mat)T3.mat[k].dispose();for(const k in T3.tex)T3.tex[k].dispose();T3.mat={};T3.tex={};T3.gen++;}
+function dropLayerCache(){const lc=T3.lc;for(const L of lc.layers)if(L)for(const part of['base','top','bot'])for(const m of L[part])m.geometry.dispose();lc.layers=[];lc.v=null;}
 const NB=[[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]],SHADE=[1,.5,.74,.86,.68,.93];
 function emitCross(Gp,x,y,z,c){
   const Q=[[[.15,0,.15],[.85,0,.85],[.85,1,.85],[.15,1,.15]],[[.85,0,.15],[.15,0,.85],[.15,1,.85],[.85,1,.15]]],uv=[[0,0],[1,0],[1,1],[0,1]];
@@ -1602,25 +1637,38 @@ function emit(Gp,f,bx,x,y,z,c,r){
 function lines3(pts,color,opacity){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
   return new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:new THREE.Color(color),transparent:opacity<1,opacity}));}
 function gridPts(X,Z,y){const pts=[];for(let x=0;x<=X;x++)pts.push(x,y,0,x,y,Z);for(let z=0;z<=Z;z++)pts.push(0,y,z,X,y,z);return pts;}
-function rebuild3D(){
-  const t=T3,v=V();
-  for(const ch of[...t.group.children]){t.group.remove(ch);ch.geometry.dispose();if(ch.isLine||ch.userData.own)ch.material.dispose();}
-  const vis=y=>S.mode==='full'?true:S.mode==='only'?y===S.layer:y<=S.layer;
-  const getV=(x,y,z)=>(y<0||y>=v.Y||!vis(y))?null:v.get(x,y,z);
-  const groups={};
-  for(let y=0;y<v.Y;y++){if(!vis(y))continue;const dim=(S.mode==='upto'&&y<S.layer)?.45:1;
-    for(const c of v.layers[y]){const d=getDef(c.id);const mode=(d.clear&&!d.cut)?'t':'c';
-      if(d.cross){const key=fk(d,4)+'|c';const Gp=groups[key]||(groups[key]={pos:[],uv:[],col:[],idx:[]});emitCross(Gp,c.x,y,c.z,.92*dim);continue;}
-      d.boxes.forEach((bx,bi)=>{const bound=[bx[3]===1,bx[2]===0,bx[1]===1,bx[0]===0,bx[5]===1,bx[4]===0];
-        for(let f=0;f<6;f++){
-          if(bound[f]){const n=getV(c.x+NB[f][0],y+NB[f][1],c.z+NB[f][2]);if(n){const nd=getDef(n);if(nd.solid||(d.fullBox&&d.clear&&n===c.id))continue;}}
-          const tk=fk(d,f),key=tk+'|'+mode,u=tk.startsWith('v:')&&d.uv&&d.uv[bi];
-          const Gp=groups[key]||(groups[key]={pos:[],uv:[],col:[],idx:[]});
-          emit(Gp,f,bx,c.x,y,c.z,SHADE[f]*dim,u?(f<2?u.t:u.s):null);}});}}
-  for(const key in groups){const Gp=groups[key],[tk,mode]=key.split('|');
+/* Il modello 3D si costruisce un livello alla volta e si tiene da parte: cambiando livello si mostrano o nascondono pezzi già pronti.
+   Per ogni livello: "base" (facce visibili guardando tutta la costruzione), "top" (facce in alto coperte solo dal livello sopra,
+   servono quando quel livello è l'ultimo mostrato) e "bot" (facce in basso coperte solo dal livello sotto, per la vista del solo livello). */
+function layerMeshes(v,y){
+  const parts={base:{},top:{},bot:{}};
+  const G=(part,key)=>parts[part][key]||(parts[part][key]={pos:[],uv:[],col:[],idx:[]});
+  for(const c of v.layers[y]){const d=getDef(c.id);const mode=(d.clear&&!d.cut)?'t':'c';
+    if(d.cross){emitCross(G('base',fk(d,4)+'|c'),c.x,y,c.z,.92);continue;}
+    d.boxes.forEach((bx,bi)=>{const bound=[bx[3]===1,bx[2]===0,bx[1]===1,bx[0]===0,bx[5]===1,bx[4]===0];
+      for(let f=0;f<6;f++){let part='base';
+        if(bound[f]){const n=v.get(c.x+NB[f][0],y+NB[f][1],c.z+NB[f][2]);
+          if(n){const nd=getDef(n);if(nd.solid||(d.fullBox&&d.clear&&n===c.id)){if(f===0)part='top';else if(f===1)part='bot';else continue;}}}
+        const tk=fk(d,f),u=tk.startsWith('v:')&&d.uv&&d.uv[bi];
+        emit(G(part,tk+'|'+mode),f,bx,c.x,y,c.z,SHADE[f],u?(f<2?u.t:u.s):null);}});}
+  const out={base:[],top:[],bot:[]};
+  for(const part in parts)for(const key in parts[part]){const Gp=parts[part][key],[tk,mode]=key.split('|');
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(Gp.pos,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(Gp.uv,2));geo.setAttribute('color',new THREE.Float32BufferAttribute(Gp.col,3));geo.setIndex(Gp.idx);
-    const m=new THREE.Mesh(geo,mat3(tk,mode));if(mode==='t')m.renderOrder=2;t.group.add(m);}
+    const m=new THREE.Mesh(geo,mat3(tk,mode));m.userData.tk=tk;m.userData.mode=mode;if(mode==='t')m.renderOrder=2;out[part].push(m);}
+  return out;
+}
+function rebuild3D(){
+  const t=T3,v=V(),lc=t.lc;
+  if(lc.v!==v||lc.gen!==t.gen){dropLayerCache();lc.v=v;lc.gen=t.gen;}
+  for(const ch of[...t.group.children]){t.group.remove(ch);if(ch.userData.own||ch.isLine){ch.geometry.dispose();ch.material.dispose();}}
+  const vis=y=>S.mode==='full'?true:S.mode==='only'?y===S.layer:y<=S.layer;
+  const add=(list,dim)=>{for(const m of list){m.material=mat3(m.userData.tk,m.userData.mode,dim);t.group.add(m);}};
+  for(let y=0;y<v.Y;y++){if(!vis(y))continue;const L=lc.layers[y]||(lc.layers[y]=layerMeshes(v,y));
+    const dim=(S.mode==='upto'&&y<S.layer)?'d':'n';
+    add(L.base,dim);
+    if(S.mode!=='full'&&y===S.layer)add(L.top,dim);
+    if(S.mode==='only')add(L.bot,dim);}
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(v.X+6,v.Z+6),new THREE.MeshBasicMaterial({color:new THREE.Color(css('--line')),side:THREE.DoubleSide}));
   ground.rotation.x=-Math.PI/2;ground.position.set(v.X/2,-.01,v.Z/2);ground.userData.own=true;t.group.add(ground);
   t.group.add(lines3(gridPts(v.X,v.Z,0.001),css('--line-strong'),.9));
@@ -1676,6 +1724,8 @@ function normState(name,props){
 }
 function parseStateStr(s){const i=s.indexOf('[');if(i<0)return[s,{}];const p={};s.slice(i+1,-1).split(',').forEach(kv=>{const j=kv.indexOf('=');if(j>0)p[kv.slice(0,j)]=kv.slice(j+1);});return[s.slice(0,i),p];}
 const cmpProps=c=>{const o={};for(const k in(c||{}))o[k]=String(c[k]);return o;};
+// limiti: blocchi pieni e volume del riquadro (l'app tiene in memoria una cella per ogni posto del riquadro)
+const MAXBLK=2000000,MAXVOL=32000000;
 function parseStructure(root){
   const cells=[];let meta='';
   if(root.Regions){ // Litematica
@@ -1685,8 +1735,13 @@ function parseStructure(root){
       const mx=pos.x+(sz.x<0?sz.x+1:0),my=pos.y+(sz.y<0?sz.y+1:0),mz=pos.z+(sz.z<0?sz.z+1:0);
       const ids=pal.map(p=>normState(p.Name||p.id||'air',cmpProps(p.Properties||p.properties)));
       const bits=Math.max(2,32-Math.clz32(pal.length-1)),B=BigInt(bits),mask=(1n<<B)-1n,vol=ax*ay*az;
-      if(vol>6e6)throw new Error('big:'+vol);
-      for(let i=0;i<vol;i++){const start=i*bits,si=Math.floor(start/64),bo=start%64;
+      if(vol>MAXVOL)throw new Error('vol:'+vol);
+      if(arr instanceof BigInt64Array){
+        // lettura veloce: i long sono in memoria come coppie di numeri a 32 bit, nello stesso ordine dei bit del file
+        const u=new Uint32Array(arr.buffer,arr.byteOffset,arr.length*2),m32=(1<<bits)-1>>>0,axz=ax*az;
+        for(let i=0;i<vol;i++){const p=i*bits,w=p>>>5,o=p&31;let v=u[w]>>>o;if(o+bits>32)v|=u[w+1]<<(32-o);v&=m32;
+          const id=ids[v];if(!id)continue;const x=i%ax,z=((i/ax)|0)%az,y=(i/axz)|0;cells.push([mx+x,my+y,mz+z,id]);}}
+      else for(let i=0;i<vol;i++){const start=i*bits,si=Math.floor(start/64),bo=start%64;
         const a=BigInt.asUintN(64,arr[si]);let v;
         if(bo+bits<=64)v=(a>>BigInt(bo))&mask;else{const b2=BigInt.asUintN(64,arr[si+1]);v=((a>>BigInt(bo))|(b2<<BigInt(64-bo)))&mask;}
         const id=ids[Number(v)];if(!id)continue;
@@ -1707,17 +1762,19 @@ function parseStructure(root){
       const id=inv[v];if(id){const x=idx%W,z=Math.floor(idx/W)%L,y=Math.floor(idx/(W*L));cells.push([x,y,z,id]);}idx++;}
   }
   if(!cells.length)throw new Error('empty');
-  if(cells.length>300000)throw new Error('big:'+cells.length);
+  if(cells.length>MAXBLK)throw new Error('big:'+cells.length);
   let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9;
   for(const c of cells){x0=Math.min(x0,c[0]);y0=Math.min(y0,c[1]);z0=Math.min(z0,c[2]);x1=Math.max(x1,c[0]);y1=Math.max(y1,c[1]);z1=Math.max(z1,c[2]);}
+  {const vol=(x1-x0+1)*(y1-y0+1)*(z1-z0+1);if(vol>MAXVOL)throw new Error('vol:'+vol);}
   const sch=root.Schematic&&root.Schematic.Width!=null?root.Schematic:root,dvRaw=root.MinecraftDataVersion??sch.DataVersion??root.DataVersion,dv=typeof dvRaw==='number'&&dvRaw>0?dvRaw:null;
   return{meta,dv,X:x1-x0+1,Y:y1-y0+1,Z:z1-z0+1,cells:cells.map(c=>[c[0]-x0,c[1]-y0,c[2]-z0,c[3]])};
 }
 const IMP_DESC='Importata dal file {0}. I nomi dei blocchi che non ho in italiano restano quelli del gioco in inglese.';
 const IMP_TIPS=['Nella griglia la freccia bianca indica il lato alto di scale e blocchi orientati.','Blocchi speciali come porte, cartelli o oggetti con dati extra sono mostrati in forma semplificata.','Per la ricostruzione più comoda carica lo stesso file in Litematica: mostra un ologramma nel mondo.'];
 function buildFromCells(id,name,file,X,Y,Z,cells,dv){
-  const arr=new Array(X*Y*Z).fill(null);
-  for(const[x,y,z,t]of cells){const k=(y*Z+z)*X+x;if(!arr[k])arr[k]=t;}
+  let arr;
+  if(cells instanceof Vox)arr=cells;
+  else{arr=new Vox(X*Y*Z);for(const[x,y,z,t]of cells){const k=(y*Z+z)*X+x;if(!arr.idx[k])arr.set(k,t);}}
   const B={id,name,file,dv:dv||null,imported:true,cat:'Importate',tag:'File',diff:'—',front:null,style:{},slots:[],
     orig:{X,Y,Z,arr},excl:new Set(),feetSet:null,desc:T(IMP_DESC,file),extra:'',tips:IMP_TIPS.map(x=>T(x))};
   applyExcl(B);return B;
@@ -1729,32 +1786,39 @@ const MK=new Map();
 const matKey=t=>{let k=MK.get(t);if(k==null){const mc=matOf(t).d.mc||'';k=mc.slice(mc.lastIndexOf(':')+1);MK.set(t,k);}return k;};
 // piano del terreno: il livello più alto, contando dal fondo senza interruzioni, coperto per almeno il 40% da blocchi esclusi
 function groundTop(o,isOut){let top=-1;for(let y=0;y<o.Y;y++){let n=0;
-  for(let i=y*o.X*o.Z,e=i+o.X*o.Z;i<e;i++){const t=o.arr[i];if(t&&isOut(t))n++;}
+  const out=o.arr.pal.map(t=>!!t&&isOut(t)),idx=o.arr.idx;
+  for(let i=y*o.X*o.Z,e=i+o.X*o.Z;i<e;i++)if(out[idx[i]])n++;
   if(n>=.4*o.X*o.Z)top=y;else break;}return top;}
 function applyExcl(B){
-  const o=B.orig,ex=B.excl,out=[],keep=[];let lo=-1,hi=-1;
-  for(let y=0;y<o.Y;y++)for(let z=0;z<o.Z;z++)for(let x=0;x<o.X;x++){const t=o.arr[(y*o.Z+z)*o.X+x];if(!t)continue;
-    if(ex.size&&ex.has(matKey(t))){out.push({x,z,id:t});continue;}
-    keep.push([x,y,z,t]);if(lo<0)lo=y;hi=y;}
-  if(!keep.length)return false;
-  const X=o.X,Z=o.Z,Y=hi-lo+1,arr=new Array(X*Y*Z).fill(null),layers=[...Array(Y)].map(()=>[]);
-  for(const[x,y,z,t]of keep){arr[((y-lo)*Z+z)*X+x]=t;layers[y-lo].push({x,z,t});}
-  for(const L of layers)L.sort((p,q)=>p.z-q.z||p.x-q.x);
-  Object.assign(B,{X,Y,Z,arr,layers,total:keep.length,y0:lo,exclRows:countMats(out)});
+  const o=B.orig,ex=B.excl,P=o.arr.pal,oi=o.arr.idx,XZ=o.X*o.Z;
+  // per ogni voce della palette: esclusa o no (il calcolo si fa una volta per tipo di blocco, non per ogni blocco)
+  const isEx=P.map(t=>!!t&&ex.size>0&&ex.has(matKey(t)));
+  const exCnt=new Map();let lo=-1,hi=-1,total=0;
+  for(let y=0;y<o.Y;y++){let any=false;for(let i=y*XZ,e=i+XZ;i<e;i++){const k=oi[i];if(!k)continue;if(isEx[k]){exCnt.set(k,(exCnt.get(k)||0)+1);continue;}any=true;total++;}
+    if(any){if(lo<0)lo=y;hi=y;}}
+  if(!total)return false;
+  const X=o.X,Z=o.Z,Y=hi-lo+1,arr=new Vox(X*Y*Z,P),layers=[...Array(Y)].map(()=>[]);
+  if(oi instanceof Uint32Array)arr.idx=new Uint32Array(X*Y*Z);
+  for(let y=lo;y<=hi;y++){const L=layers[y-lo];for(let z=0;z<Z;z++)for(let x=0;x<X;x++){const i=(y*Z+z)*X+x,k=oi[i];if(!k||isEx[k])continue;
+    arr.idx[((y-lo)*Z+z)*X+x]=k;const t=P[k];L.push({x,z,t,id:t});}}
+  const exRows=countMatsW([...exCnt].map(([k,n])=>({id:P[k],w:n})));
+  let exBlocks=0;for(const n of exCnt.values())exBlocks+=n;
+  Object.assign(B,{X,Y,Z,arr,layers,total,y0:lo,exclRows:exRows,exclBlocks:exBlocks});
   const g=ex.size?groundTop(o,t=>ex.has(matKey(t))):-1;B.feetAuto=Math.max(0,Math.min(Y-1,g+1-lo));
   B.feet=B.feetSet!=null?Math.max(0,Math.min(Y-1,B.feetSet)):B.feetAuto;
   for(const k in VC)if(k.startsWith(B.id+'|'))delete VC[k];
   return true;
 }
-const terrainKeys=B=>{const ks=new Set();if(B.orig)for(const t of B.orig.arr)if(t){const k=matKey(t);if(TERRAIN.test(k))ks.add(k);}return ks;};
+const SOFTTERRAIN=/^(sand|red_sand|gravel|clay|snow|powder_snow|mud|calcite)$/;
+const terrainKeys=B=>{const ks=new Set();if(B.orig){const A=B.orig.arr,used=new Uint8Array(A.pal.length),ix=A.idx;for(let i=0;i<ix.length;i++)used[ix[i]]=1;
+  for(let k=1;k<A.pal.length;k++)if(used[k]){const m=matKey(A.pal[k]);if(TERRAIN.test(m))ks.add(m);}}return ks;};
 /* salvataggio delle importazioni nel browser */
 function b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
 function unb64(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 function importEntry(B,bin){
-  const o=B.orig,pal=[],map=new Map(),idx=new Uint16Array(o.X*o.Y*o.Z);
-  o.arr.forEach((t,i)=>{if(!t)return;let k=map.get(t);if(k==null){k=pal.length+1;pal.push(t);map.set(t,k);}idx[i]=k;});
-  const raw=new Uint8Array(idx.buffer);
-  return{id:B.id,name:B.name,file:B.file,dv:B.dv,X:o.X,Y:o.Y,Z:o.Z,pal,data:bin?raw:b64(raw),excl:[...B.excl],feet:B.feetSet,t:B.t||Date.now()};
+  const o=B.orig,pal=o.arr.pal.slice(1),idx=o.arr.idx,wide=idx instanceof Uint32Array;
+  const raw=new Uint8Array(idx.buffer.slice(0));
+  return{id:B.id,name:B.name,file:B.file,dv:B.dv,X:o.X,Y:o.Y,Z:o.Z,pal,...(wide?{w:4}:{}),data:bin?raw:b64(raw),excl:[...B.excl],feet:B.feetSet,t:B.t||Date.now(),...(bin&&B.thumb?{thumb:B.thumb}:{})};
 }
 /* le importazioni stanno in IndexedDB, che ha molto più spazio del vecchio salvataggio (pochi MB in tutto);
    se IndexedDB non c'è (finestra privata, browser bloccato) si torna al salvataggio vecchio */
@@ -1778,9 +1842,9 @@ async function removeImport(id){
   const m=moved();if(m.delete(id))store.set('bpb-imports-moved',[...m]);
 }
 function entryToBuild(e){
-  const raw=typeof e.data==='string'?unb64(e.data):new Uint8Array(e.data),idx=new Uint16Array(raw.buffer,raw.byteOffset,raw.byteLength>>1),cells=[];
-  for(let i=0;i<idx.length;i++)if(idx[i]){const x=i%e.X,z=Math.floor(i/e.X)%e.Z,y=Math.floor(i/(e.X*e.Z));cells.push([x,y,z,e.pal[idx[i]-1]]);}
-  const B=buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,cells,e.dv);B.t=e.t||0;
+  const raw=typeof e.data==='string'?unb64(e.data):new Uint8Array(e.data),buf=raw.byteOffset?raw.slice().buffer:raw.buffer;
+  const vox=new Vox(e.X*e.Y*e.Z,[null,...e.pal]);vox.idx=e.w===4?new Uint32Array(buf,0,raw.byteLength>>2):new Uint16Array(buf,0,raw.byteLength>>1);
+  const B=buildFromCells(e.id,e.name,e.file,e.X,e.Y,e.Z,vox,e.dv);B.t=e.t||0;if(e.thumb)B.thumb=e.thumb;
   if(e.excl&&e.excl.length||e.feet!=null){B.excl=new Set(e.excl||[]);B.feetSet=e.feet!=null?e.feet:null;if(!applyExcl(B)){B.excl=new Set();applyExcl(B);}}
   return B;
 }
@@ -1870,7 +1934,9 @@ function exportLitematic(v,name,dv){
 }
 /* Data pack vanilla: fantasma di un livello alla volta fatto di block display; sparisce quando piazzi il blocco giusto */
 const dpNs=B=>'bpb_'+(slug((B.it&&B.it.name)||B.name).slice(0,24)||'struttura');
-function dataPack(B,v){
+// sopra questa soglia: niente fantasma completo e controlli solo vicino ai giocatori, per non bloccare il gioco
+const DPBIG=40000;
+async function dataPack(B,v,onProgress){
   const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y;
   const W=G+'_x',R=G+'_r'; // fantasma rosso: blocco sbagliato; arancione: blocco giusto ma girato in un altro modo
   // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
@@ -1893,6 +1959,9 @@ function dataPack(B,v){
   // materiali: stessi gruppi dell'elenco nell'app
   const all=countMats(v.layers.flat()),gi=new Map(),grp=all.map((r,j)=>{gi.set(r.d.name,j);const st=mcState(r.id,NOV,0,0,0);return{j,r,mc:st.n,mul:new Set()};});
   const cnt=[];
+  // i livelli si preparano e comprimono uno alla volta, così anche le costruzioni enormi non riempiono la memoria
+  const BIG=B.total>DPBIG,NEW=G+'_n',SN=new Map(),LAY=[];
+  const TRANS='transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.25f,0.25f,0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b';
   for(let y=0;y<Y;y++){const L2=[];
     for(const c of v.layers[y]){const st=mcState(c.id,v,c.x,y,c.z);let show=st;
       if(st.n==='minecraft:water'||st.n==='minecraft:bubble_column')show={n:'minecraft:light_blue_stained_glass',p:{}};
@@ -1903,8 +1972,12 @@ function dataPack(B,v){
       const m=matOf(c.id);let k=kinds.get(exact);if(k==null){k=kinds.size;kinds.set(exact,k);KINF[k]={base,exact,item:mcState(m.d.id,NOV,0,0,0).n,fb:m.d.name};}
       const tags=[G,G+'_'+k];
       if(m.n){const g=grp[gi.get(m.d.name)];tags.push(G+'_m'+g.j);if(m.n>1){tags.push(G+'_m'+g.j+'_'+m.n);g.mul.add(m.n);}}
-      L2.push('summon block_display ~'+c.x+' ~'+y+' ~'+c.z+' {block_state:'+snbt(show)+',transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.25f,0.25f,0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b,Tags:['+tags.map(q).join(',')+']}');}
-    F['layer/'+(y+1)]=L2;cnt.push(L2.length);}
+      const sk=stateKey(show);let sb=SN.get(sk);if(sb==null){sb=snbt(show);SN.set(sk,sb);}
+      // costruzioni grandi: comando corto, e le impostazioni comuni (dimensione, luce, contorno) una volta sola per livello
+      L2.push('summon block_display ~'+c.x+' ~'+y+' ~'+c.z+' {block_state:'+sb+(BIG?'':','+TRANS)+',Tags:['+tags.map(q).join(',')+(BIG?','+q(NEW):'')+']}');}
+    if(BIG&&L2.length)L2.push('execute as @e[type=block_display,tag='+NEW+'] run data merge entity @s {'+TRANS+'}','tag @e[type=block_display,tag='+NEW+'] remove '+NEW);
+    cnt.push(v.layers[y].length);LAY.push(await packText(L2.join('\n')+'\n'));
+    if(onProgress&&y%3===0)onProgress(y+1,Y);}
   const cmds='/function '+ns+':next, :prev, :all, :clear, :materiali, :mancano';
   // elenco breve dei materiali di un livello, su una riga
   const MAXL=12;
@@ -1939,14 +2012,18 @@ function dataPack(B,v){
   const step=(a,b)=>'execute if score '+L+' bpb matches '+a+' run scoreboard players set '+TMP+' bpb '+b;
   F.next=['scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(0,-1).map((y,i)=>step(y,NZ[i+1])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
   F.prev=['scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(1).map((y,i)=>step(y,NZ[i])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
-  F.all=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT];
+  const NEAR=BIG?',distance=..16':'';
+  if(BIG)F.all=[say(T('{0} ha {1} blocchi: il fantasma completo metterebbe in difficoltà il gioco, quindi qui è disattivato. Usa i livelli con :next e :prev.',name,NUM(B.total)),'yellow')];
+  else{F.all=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT];
   for(let y=0;y<Y;y++)F.all.push('execute at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1));
-  F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,ns)));
+  F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,ns)));}
   F.clear=['kill @e[type=block_display,tag='+G+']','kill @e[type=marker,tag='+O+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',say(T('Fantasma di "{0}" rimosso.',name),'yellow')];
-  F.tick=['execute if score '+ON+' bpb matches 1.. run function #'+ns+':checks',
+  // costruzioni grandi: i controlli partono da ogni giocatore e guardano solo i fantasmi entro 16 blocchi
+  const AT=BIG?'at @a ':'';
+  F.tick=['execute '+AT+'if score '+ON+' bpb matches 1.. run function #'+ns+':checks',
     // tolto il blocco sbagliato, il fantasma torna normale
-    'execute as @e[type=block_display,tag='+W+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
-    'execute as @e[type=block_display,tag='+R+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
+    'execute '+AT+'as @e[type=block_display,tag='+W+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
+    'execute '+AT+'as @e[type=block_display,tag='+R+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
     // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente) o nessuno
     'execute if score '+ON+' bpb matches 1 unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run function '+ns+':done',
     // clic destro con gli oggetti: una pausa di 8 tick evita di saltare più livelli tenendo premuto il tasto
@@ -1973,7 +2050,7 @@ function dataPack(B,v){
   const tagVals=[];
   const FLUID=new Set(['minecraft:water','minecraft:lava']);
   const RENB={'minecraft:chain':'minecraft:iron_chain','minecraft:iron_chain':'minecraft:chain','minecraft:grass':'minecraft:short_grass','minecraft:short_grass':'minecraft:grass'};
-  for(const[exact,k]of kinds){const kf=KINF[k],gs='@e[type=block_display,tag='+G+'_'+k;
+  for(const[exact,k]of kinds){const kf=KINF[k],gs='@e[type=block_display,tag='+G+'_'+k+NEAR;
     if(FLUID.has(kf.base)){
       // per acqua e lava basta che lo spazio non sia più vuoto: il secchio può lasciare acqua corrente o un blocco riempito d'acqua
       F['check/'+k]=['execute as '+gs+'] at @s unless block ~ ~ ~ minecraft:air unless block ~ ~ ~ minecraft:cave_air run kill @s'];}
@@ -1998,23 +2075,36 @@ function dataPack(B,v){
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
   for(const[dir,bdir]of[['functions','blocks'],['function','block']]){ // nomi al plurale fino alla 1.20.6, al singolare dalla 1.21
     for(const f in F)files.push({name:'data/'+ns+'/'+dir+'/'+f+'.mcfunction',data:te.encode(F[f].join('\n')+'\n')});
+    LAY.forEach((e,y)=>files.push({name:'data/'+ns+'/'+dir+'/layer/'+(y+1)+'.mcfunction',...e}));
     files.push({name:'data/'+ns+'/tags/'+dir+'/checks.json',data:te.encode(JSON.stringify({values:tagVals}))});
     files.push({name:'data/'+ns+'/tags/'+bdir+'/vuoto.json',data:te.encode(JSON.stringify(VUOTO))});
     files.push({name:'data/minecraft/tags/'+dir+'/tick.json',data:te.encode(JSON.stringify({values:[ns+':tick']}))});
     files.push({name:'data/minecraft/tags/'+dir+'/load.json',data:te.encode(JSON.stringify({values:[ns+':load']}))});}
-  return zip(files);
+  return zipC(files);
 }
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?(c>>>1)^0xEDB88320:c>>>1;t[n]=c>>>0;}return t;})();
 const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;};
+// zip con compressione (deflate) quando il browser la offre: i data pack sono testo e si riducono di molte volte
+async function deflateRaw(raw){return new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());}
+async function packText(text){const raw=new TextEncoder().encode(text);if(typeof CompressionStream==='undefined')return{data:raw};
+  const cmp=await deflateRaw(raw);return cmp.length<raw.length?{data:cmp,raw:raw.length,crc:crc32(raw)}:{data:raw};}
+async function zipC(files){
+  if(typeof CompressionStream==='undefined')return zip(files);
+  const out=[];
+  for(const f of files){if(f.raw!=null){out.push(f);continue;}const raw=f.data;
+    const cmp=await deflateRaw(raw);
+    out.push(cmp.length<raw.length?{name:f.name,data:cmp,raw:raw.length,crc:crc32(raw)}:{name:f.name,data:raw});}
+  return zip(out);
+}
 function zip(files){
   const te=new TextEncoder(),parts=[],central=[];let off=0;
   const hdr=(n)=>new DataView(new ArrayBuffer(n));
-  for(const f of files){const nm=te.encode(f.name),crc=crc32(f.data),sz=f.data.length;
-    const h=hdr(30);h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
-    h.setUint32(14,crc,true);h.setUint32(18,sz,true);h.setUint32(22,sz,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+  for(const f of files){const nm=te.encode(f.name),def=f.raw!=null,crc=def?f.crc:crc32(f.data),sz=f.data.length,usz=def?f.raw:sz,meth=def?8:0;
+    const h=hdr(30);h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,meth,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,sz,true);h.setUint32(22,usz,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
     parts.push(new Uint8Array(h.buffer),nm,f.data);
-    const c=hdr(46);c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
-    c.setUint32(16,crc,true);c.setUint32(20,sz,true);c.setUint32(24,sz,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    const c=hdr(46);c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,meth,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,sz,true);c.setUint32(24,usz,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
     central.push(new Uint8Array(c.buffer),nm);off+=30+nm.length+sz;}
   const cdSize=central.reduce((s,a)=>s+a.length,0);
   const e=hdr(22);e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,off,true);
@@ -2042,7 +2132,12 @@ function makeCard(B){
 }
 function cardText(B){const btn=cards[B.id];btn.querySelector('.c-name').textContent=B.name;btn.querySelector('.c-tags').textContent=T(B.cat)+' · '+T(B.tag);
   btn.querySelector('.c-meta').textContent=B.X+'×'+B.Z+'×'+B.Y+' · '+T('{0} blocchi',B.total)+(B.imported?'':' · '+T(B.diff));}
-function drawThumb(B){renderIso(cards[B.id].querySelector('canvas'),view(B,B.style),{mode:'full',rot:2,pad:.84,maxW:40});}
+// le miniature delle importazioni si salvano con il file: disegnarle da capo per strutture enormi richiede secondi
+function drawThumb(B,fresh){const cv=cards[B.id].querySelector('canvas');
+  if(B.imported&&B.thumb&&!fresh){const im=new Image();im.onload=()=>{const w=cv.clientWidth||im.width,h=cv.clientHeight||im.height,dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(im,0,0,cv.width,cv.height);};im.src=B.thumb;return;}
+  renderIso(cv,view(B,B.style),{mode:'full',rot:2,pad:.84,maxW:40});
+  if(B.imported)try{B.thumb=cv.toDataURL('image/png');}catch(e){}}
 const emptyMsg=document.createElement('p');emptyMsg.className='empty';
 function renderLibrary(){
   let n=0;
@@ -2065,8 +2160,8 @@ async function importFile(f){
     const r=parseStructure(root);
     const base=f.name.replace(/\.[^.]+$/,'');
     const B=buildFromCells('imp-'+Date.now().toString(36),(r.meta||base).slice(0,60),f.name,r.X,r.Y,r.Z,r.cells,r.dv);
-    const tk=terrainKeys(B);let terr=0;
-    if(tk.size&&groundTop(B.orig,t=>tk.has(matKey(t)))>=0){B.excl=tk;if(applyExcl(B))terr=B.exclRows.reduce((a,r)=>a+r.n,0);else{B.excl=new Set();applyExcl(B);}}
+    const tk=new Set([...terrainKeys(B)].filter(k=>!SOFTTERRAIN.test(k)));let terr=0;
+    if(tk.size&&groundTop(B.orig,t=>tk.has(matKey(t)))>=0){B.excl=tk;if(applyExcl(B))terr=B.exclBlocks;else{B.excl=new Set();applyExcl(B);}}
     BUILDS.push(B);makeCard(B);fillTags();
     B.t=Date.now();const saved=await saveImport(B);
     S.cat='Tutte';$('catChips').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c==='Tutte')));
@@ -2077,7 +2172,8 @@ async function importFile(f){
     impMsg(m==='notnbt'?T('Questo file non sembra un file di struttura di Minecraft.')
       :m==='legacy'?T('È un .schematic del vecchio formato (prima della 1.13), che usa numeri al posto dei nomi dei blocchi: non è supportato. Cerca la versione .schem o .litematic.')
       :m==='empty'?T('Il file non contiene blocchi.')
-      :m.startsWith('big:')?T('La struttura ha {0} blocchi: qui il limite è {1}.',NUM(m.slice(4)),NUM(300000))
+      :m.startsWith('big:')?T('La struttura ha {0} blocchi: qui il limite è {1}.',NUM(m.slice(4)),NUM(MAXBLK))
+      :m.startsWith('vol:')?T('Lo spazio occupato dalla struttura è troppo grande ({0} posti, larghezza × profondità × altezza): qui il limite è {1}. Prova a dividerla in parti.',NUM(m.slice(4)),NUM(MAXVOL))
       :m==='unknown'?T('Non riconosco il formato di questo file. Sono supportati .schem, .litematic e .nbt.')
       :m==='oldbrowser'?T(OLDB)
       :T('Non sono riuscito a leggere questo file: potrebbe essere danneggiato o di un formato che non conosco.'),true);
@@ -2151,14 +2247,17 @@ function toggleDone(y,on){if(on)done.add(y);else done.delete(y);store.set('bpb-d
 /* griglia dall'alto */
 let gridGeom=null;
 const SIDE={'0,-1':"verso l'alto",'0,1':'verso il basso','-1,0':'verso sinistra','1,0':'verso destra'};
-function drawCell(g,d,x,y,c,rot){
+// texture già ridimensionate alla misura della cella: copiarle è molto più veloce che ridimensionarle ogni volta
+let SCC={c:0,m:new Map()};
+function scaled(t,c){if(SCC.c!==c)SCC={c,m:new Map()};let s=SCC.m.get(t);if(!s){s=document.createElement('canvas');s.width=s.height=c;const q=s.getContext('2d');q.imageSmoothingEnabled=false;q.drawImage(t,0,0,t.width,t.width,0,0,c,c);SCC.m.set(t,s);}return s;}
+function drawCell(g,d,x,y,c,rot,acc){
   const k0=fk(d,0),isV=k0.startsWith('v:');
   if(d.cross){const t=TEX(fk(d,4));g.drawImage(t,0,0,t.width,t.width,x,y,c,c);return;}
   if(d.torch||d.id==='m:torch'){if(isV){const t=TEX(k0);g.drawImage(t,0,0,t.width,t.width,x,y,c,c);return;}
     g.fillStyle='rgba(60,40,20,.5)';g.fillRect(x+c*.44,y+c*.44,c*.12,c*.12);g.drawImage(TX('flame'),x+c*.33,y+c*.33,c*.34,c*.34);return;}
   const t=TEX(k0),k=t.width/16;
   if(isV&&d.uv){const r=d.uv[0].s,w=(r[2]-r[0])/16*c*1.4,h=(r[3]-r[1])/16*c*1.4;g.drawImage(t,r[0]*k,r[1]*k,(r[2]-r[0])*k,(r[3]-r[1])*k,x+(c-w)/2,y+(c-h)/2,w,h);return;}
-  if(d.fullBox||d.slab||d.dir||(d.boxes.length===1&&d.boxes[0][1]-d.boxes[0][0]===1&&d.boxes[0][5]-d.boxes[0][4]===1)){g.drawImage(t,0,0,t.width,t.width,x,y,c,c);if(c>6){g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,c-1,c-1);}}
+  if(d.fullBox||d.slab||d.dir||(d.boxes.length===1&&d.boxes[0][1]-d.boxes[0][0]===1&&d.boxes[0][5]-d.boxes[0][4]===1)){if(acc&&c===Math.round(c)&&c<=64)g.drawImage(scaled(t,c),x,y);else g.drawImage(t,0,0,t.width,t.width,x,y,c,c);if(c>6){if(acc)acc.rect(x+.5,y+.5,c-1,c-1);else{g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,c-1,c-1);}}}
   else for(const bx of d.boxes){const[x0,x1,,,z0,z1]=rotBox(bx,rot);
     g.drawImage(t,x0*16*k,z0*16*k,Math.max(1,(x1-x0)*16*k),Math.max(1,(z1-z0)*16*k),x+x0*c,y+z0*c,Math.max(1,(x1-x0)*c),Math.max(1,(z1-z0)*c));
     if(c>10){g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.strokeRect(x+x0*c+.5,y+z0*c+.5,Math.max(0,(x1-x0)*c-1),Math.max(0,(z1-z0)*c-1));}}
@@ -2178,8 +2277,10 @@ function drawGrid(cv,v,layer,rot,c,col,hover,dpr){
   for(let a=0;a<A;a++)if(every===1||a===0||(a+1)%every===0)g.fillText(String(a+1),m+a*c+c/2,m/2);
   for(let b=0;b<D;b++)if(every===1||b===0||(b+1)%every===0)g.fillText(String(b+1),m/2,m+b*c+c/2);
   g.fillStyle=col.sunk;g.fillRect(m,m,A*c,D*c);
-  if(layer>0){g.globalAlpha=.22;for(const cell of v.layers[layer-1]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot);}g.globalAlpha=1;}
-  for(const cell of v.layers[layer]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot);}
+  // i bordi dei blocchi si disegnano tutti insieme alla fine: uno per blocco è lentissimo con livelli da decine di migliaia di blocchi
+  const edge=(acc,alpha)=>{g.globalAlpha=alpha;g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=1;g.stroke(acc);g.globalAlpha=1;};
+  if(layer>0){const acc=new Path2D();g.globalAlpha=.22;for(const cell of v.layers[layer-1]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot,acc);}g.globalAlpha=1;edge(acc,.22);}
+  {const acc=new Path2D();for(const cell of v.layers[layer]){const[a,b]=toR(v,rot,cell.x,cell.z);drawCell(g,getDef(cell.id),m+a*c,m+b*c,c,rot,acc);}edge(acc,1);}
   const minor=c>=6;
   for(let a=0;a<=A;a++){if(!minor&&a%5)continue;g.beginPath();g.strokeStyle=a%5===0?col.strong:col.line;g.lineWidth=a%5===0?1.4:.8;g.moveTo(m+a*c,m);g.lineTo(m+a*c,m+D*c);g.stroke();}
   for(let b=0;b<=D;b++){if(!minor&&b%5)continue;g.beginPath();g.strokeStyle=b%5===0?col.strong:col.line;g.lineWidth=b%5===0?1.4:.8;g.moveTo(m,m+b*c);g.lineTo(m+A*c,m+b*c);g.stroke();}
@@ -2223,6 +2324,7 @@ function matOf(id){
   let b2=b;for(const[re,to]of ITEMREN)b2=b2.replace(re,to);
   return{d:b2===b?d0:getDef('x:'+full.slice(0,cut)+b2+'|'),n};
 }
+function countMatsW(list){const cnt=new Map();list.forEach(c=>{const m=matOf(c.id);if(!m.n)return;const e=cnt.get(m.d.name)||{n:0,id:m.d.id,d:m.d};e.n+=m.n*c.w;cnt.set(m.d.name,e);});return[...cnt.values()].sort((p,q)=>q.n-p.n);}
 function countMats(list){const cnt=new Map();list.forEach(c=>{const m=matOf(c.id);if(!m.n)return;const e=cnt.get(m.d.name)||{n:0,id:m.d.id,d:m.d};e.n+=m.n;cnt.set(m.d.name,e);});return[...cnt.values()].sort((p,q)=>q.n-p.n);}
 const slotText=rows=>{const s=slotsOf(rows);return s<=36?T(s===1?'{0} posto nell\'inventario':'{0} posti nell\'inventario',s):T('{0} posti nell\'inventario, circa {1} bauli doppi',s,Math.ceil(s/54));};
 function matRows(){const v=V(),list=S.tab==='layer'?v.layers[S.layer]:v.layers.flat();return{list,rows:countMats(list)};}
@@ -2246,7 +2348,7 @@ function renderExcl(msg){
   const B=S.B,box=$('exclBox');box.innerHTML='';
   if(!B.imported){box.hidden=true;return;}
   if(B.excl.size){
-    const p=document.createElement('p');const n=B.exclRows.reduce((a,r)=>a+r.n,0);
+    const p=document.createElement('p');const n=B.exclBlocks;
     p.textContent=T('Esclusi, senza fantasma e non contati ({0} blocchi). Tocca per rimetterli:',NUM(n));box.appendChild(p);
     for(const r of B.exclRows){const nm=getDef(r.id).name,b=document.createElement('button');b.type='button';b.textContent=nm+' · '+NUM(r.n);
       b.setAttribute('aria-label',T('Rimetti {0}',nm));const k=matKey(r.id);
@@ -2262,7 +2364,7 @@ function renderExcl(msg){
 function setExcl(ex){
   const B=S.B,old=B.excl;B.excl=ex;B.feetSet=null;
   if(!applyExcl(B)){B.excl=old;applyExcl(B);renderExcl(T('Non posso escludere tutto: la costruzione resterebbe vuota.'));return;}
-  store.del('bpb-done-'+B.id);store.del('bpb-layer-'+B.id);saveImport(B);cardText(B);drawThumb(B);selectBuild(B.id,0);
+  store.del('bpb-done-'+B.id);store.del('bpb-layer-'+B.id);cardText(B);drawThumb(B,true);saveImport(B);selectBuild(B.id,0);
 }
 function renderFeet(){const B=S.B,row=$('feetRow');
   if(!B.imported||!(B.excl.size||B.feet)){row.hidden=true;return;}
@@ -2342,7 +2444,8 @@ async function makeManual(){
   footer(page);
   // pagine dei livelli
   const heavy=B.total>40000;
-  const[A]=rdims(v,S.rot);const cpx=Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
+  // per le costruzioni molto larghe la griglia stampata ha comunque blocchi minuscoli: si usa un'immagine più leggera
+  const[A]=rdims(v,S.rot);const cpx=A>200?Math.max(3,Math.floor(1300/(A+1.3))):Math.max(6,Math.min(30,Math.floor(2200/(A+1.3))));
   const front=frontSide(B,v,S.rot);
   for(let ly=0;ly<v.Y;ly++){
     dlMsg(T('Creo il manuale: livello {0} di {1}…',ly+1,v.Y));await tick();
@@ -2355,7 +2458,8 @@ async function makeManual(){
       doc.addImage(th.toDataURL('image/png'),'PNG',PW-M-58,10,58,58*220/300,undefined,'FAST');}
     const gc=document.createElement('canvas');const gg=drawGrid(gc,v,ly,S.rot,cpx,PRINT,null,1);
     const maxW=CW,maxH=150,sc=Math.min(maxW/gg.cw,maxH/gg.ch);const gw=gg.cw*sc,gh=gg.ch*sc,gy=56;
-    doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
+    if(gc.width*gc.height>1.2e6||A>200)doc.addImage(gc.toDataURL('image/jpeg',.82),'JPEG',M,gy,gw,gh);
+    else doc.addImage(gc.toDataURL('image/png'),'PNG',M,gy,gw,gh,undefined,'FAST');
     let yy=gy+gh+5;doc.setFontSize(8);doc.setTextColor(110);
     doc.text(T('In grigio chiaro il livello sotto. ½ = lastra. Freccia bianca = lato alto delle scale. Righe spesse ogni 5 blocchi.'),M,yy);yy+=7;
     matTable(countMats(v.layers[ly]),yy,280,T('Materiali di questo livello'));
@@ -2388,7 +2492,8 @@ $('dlZip').addEventListener('click',async()=>{
 });
 $('dlPack').addEventListener('click',async()=>{
   const btn=$('dlPack');btn.disabled=true;dlMsg(T('Preparo il data pack…'));
-  try{const B=S.B;await saveFile(dpNs(B)+T('_fantasma')+'.zip',dataPack(B,V()));}
+  try{const B=S.B;await saveFile(dpNs(B)+T('_fantasma')+'.zip',await dataPack(B,V(),(a,b)=>dlMsg(T('Preparo il data pack… livello {0} di {1}',a,b))));
+    if(B.total>DPBIG)dlMsg(T('Scaricato. Costruzione molto grande: in gioco il fantasma completo (:all) è disattivato e i fantasmi si controllano solo entro 16 blocchi da te. Il primo /reload può richiedere qualche secondo.'));}
   catch(e){dlMsg(T('Non sono riuscito a creare il data pack.'));}
   finally{btn.disabled=false;}
 });
@@ -2455,7 +2560,7 @@ let TEXSRC=[];
 function texMsg(t,err){const m=$('texMsg');m.textContent=t;m.classList.toggle('err',!!err);}
 function applyTextures(map,sources){
   VT=map;TEXSRC=sources||[];
-  for(const k in VTC)delete VTC[k];for(const k in ICON)delete ICON[k];reset3DTex();
+  for(const k in VTC)delete VTC[k];for(const k in ICON)delete ICON[k];AVG.clear();reset3DTex();
   BUILDS.forEach(B=>{if(cards[B.id])drawThumb(B);});
   if(S.B){renderView();renderGrid();renderMats();}
   const on=!!VT;$('texbar').classList.toggle('on',on);$('texClear').hidden=!on;
@@ -2673,7 +2778,7 @@ $('remote').hidden=false;renderRemoteStatus();
 DL={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return{status:'saved'};}};
 $('dlPdf').disabled=false;$('dlZip').disabled=false;$('dlPack').disabled=false;
-const APP_VERSION='0.3';
+const APP_VERSION='0.4';
 /* app installabile: il browser offre l'installazione (Chrome, Edge, Android); su iPhone e iPad si spiega come fare da Safari */
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 {let promptEv=null;const ib=$('installBtn'),im=$('installMsg');
