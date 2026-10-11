@@ -2073,11 +2073,14 @@ async function dataPack(B,v,onProgress){
     bar(X/2-.02,0,.04,Z,'light_blue_concrete'),bar(0,Z/2-.02,X,.04,'light_blue_concrete'));
   F['misure/disegna']=DR;
   // prima di disegnare si tolgono tutte le guide nel mondo (anche di altre costruzioni o di versioni vecchie del pack)
-  F['misure/qui']=['kill @e[type=block_display,tag=bpb_misure]','kill @e[type=block_display,tag='+GM+']'];
+  // le guide si riconoscono anche dalla loro posizione interna (2 centesimi sopra il pavimento): così si tolgono tutte,
+  // con qualunque etichetta, anche quelle create da versioni precedenti del pack o da altre costruzioni
+  const KILLG=['kill @e[type=block_display,tag=bpb_misure]','kill @e[type=block_display,tag='+GM+']','kill @e[type=block_display,nbt={transformation:{translation:[0.0f,0.02f,0.0f]}}]'];
+  F['misure/qui']=[...KILLG];
   for(let y=0;y<Y;y++)F['misure/qui'].push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+O+',limit=1] positioned ~ ~'+y+' ~ run function '+ns+':misure/disegna');
   F['misure/accendi']=['scoreboard players set '+GD+' bpb 1','function '+ns+':misure/qui',
     say(T('Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; /function {2}:misure le spegne.',X,Z,'bpb'),'yellow')];
-  F['misure/spegni']=['scoreboard players set '+GD+' bpb 0','kill @e[type=block_display,tag=bpb_misure]','kill @e[type=block_display,tag='+GM+']',say(T('Misure spente.'),'yellow')];
+  F['misure/spegni']=['scoreboard players set '+GD+' bpb 0',...KILLG,say(T('Misure spente.'),'yellow')];
   F.misure=[...OBJ,'execute store result score '+GT+' bpb run scoreboard players get '+GD+' bpb',
     'execute if score '+GT+' bpb matches 1 run function '+ns+':misure/spegni','execute unless score '+GT+' bpb matches 1 run function '+ns+':misure/accendi'];
   F.show=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 1',ACT];
@@ -2096,7 +2099,7 @@ async function dataPack(B,v,onProgress){
   else{F.all=['kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT];
   for(let y=0;y<Y;y++)F.all.push('execute at @e[type=marker,tag='+O+',limit=1] run function '+ns+':layer/'+(y+1));
   F.all.push(say(T('{0}: fantasma completo, {1} blocchi. /function {2}:show torna al livello corrente.',name,B.total,'bpb')));}
-  F.clear=['kill @e[type=block_display,tag='+G+']','kill @e[type=block_display,tag='+GM+']','kill @e[type=marker,tag='+O+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',say(T('Fantasma di "{0}" rimosso.',name),'yellow')];
+  F.clear=['kill @e[type=block_display,tag='+G+']',...KILLG,'kill @e[type=marker,tag='+O+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',say(T('Fantasma di "{0}" rimosso.',name),'yellow')];
   // costruzioni grandi: i controlli partono da ogni giocatore e guardano solo i fantasmi entro 16 blocchi
   const AT=BIG?'at @a ':'';
   F.tick=['execute '+AT+'if score '+ON+' bpb matches 1.. run function #'+ns+':checks',
