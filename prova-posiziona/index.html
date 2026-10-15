@@ -906,6 +906,7 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "{0}: fantasma completo, {1} blocchi.": "{0}: full ghost, {1} blocks.",
 "Livello completato!": "Layer done!",
 "{0}: livello {1} di {2}, {3} blocco.": "{0}: layer {1} of {2}, {3} block.",
+"La costruzione ha molti blocchi in vista ({0}): per non rallentare il gioco l'anteprima mostra solo la scatola.": "The build has many visible blocks ({0}): to keep the game smooth the preview shows only the box.",
 "{0}: livello {1} di {2}, {3} blocchi.": "{0}: layer {1} of {2}, {3} blocks.",
 "Il livello 1 è sotto terra: compare un blocco sotto il punto scelto, scava lì.": "Layer 1 is underground: it appears one block below the chosen spot, dig there.",
 "I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below the chosen spot, dig there.",
@@ -2046,7 +2047,7 @@ async function dataPack(B,v,onProgress){
   const W=G+'_x',R=G+'_r',OK=G+'_ok'; // rosso: blocco sbagliato; arancione: giusto ma girato; OK: blocco giusto, fantasma nascosto (ricompare se il posto torna vuoto)
   // tutto quello che il giocatore non usa sta in "interno/", così tra i comandi suggeriti restano pochi nomi chiari
   const I=ns+':interno/';
-  const E='#'+sl+'_e',A='#'+sl+'_a',PM='#'+sl+'_pm',RS='#'+sl+'_r',PV='bpbv_'+sl,PB='bpbp_'+sl,CK='bpbk_'+sl,PZ='bpbz_'+sl;
+  const E='#'+sl+'_e',A='#'+sl+'_a',PM='#'+sl+'_pm',RS='#'+sl+'_r',PV='bpbv_'+sl,PT='bpbw_'+sl,PB='bpbp_'+sl,CK='bpbk_'+sl,PZ='bpbz_'+sl;
   // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
   const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,US='bpbc'+ID,TR='bpbt'+ID,ACT='scoreboard players set #attivo bpb '+ID;
   const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick',
@@ -2075,7 +2076,7 @@ async function dataPack(B,v,onProgress){
   const all=countMats(v.layers.flat()),gi=new Map(),grp=all.map((r,j)=>{gi.set(r.d.name,j);const st=mcState(r.id,NOV,0,0,0);return{j,r,mc:st.n,mul:new Set()};});
   const cnt=[];
   // i livelli si preparano e comprimono uno alla volta, così anche le costruzioni enormi non riempiono la memoria
-  const BIG=B.total>DPBIG,NEW=G+'_n',SN=new Map(),LAY=[];
+  const BIG=B.total>DPBIG,NEW=G+'_n',SN=new Map(),LAY=[],PRE=[];
   const TRANS='transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.25f,0.25f,0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b';
   for(let y=0;y<Y;y++){const L2=[];
     for(const c of v.layers[y]){const st=mcState(c.id,v,c.x,y,c.z);let show=st;
@@ -2088,6 +2089,7 @@ async function dataPack(B,v,onProgress){
       const tags=[G,G+'_'+k];
       if(m.n){const g=grp[gi.get(m.d.name)];tags.push(G+'_m'+g.j);if(m.n>1){tags.push(G+'_m'+g.j+'_'+m.n);g.mul.add(m.n);}}
       const sk=stateKey(show);let sb=SN.get(sk);if(sb==null){sb=snbt(show);SN.set(sk,sb);}
+      if(!BIG)PRE.push([c.x,y,c.z,sb,c.id]);
       // costruzioni grandi: comando corto, e le impostazioni comuni (dimensione, luce, contorno) una volta sola per livello
       L2.push('summon block_display ~'+c.x+' ~'+y+' ~'+c.z+' {block_state:'+sb+(BIG?'':','+TRANS)+',Tags:['+tags.map(q).join(',')+(BIG?','+q(NEW):'')+']}');}
     if(BIG&&L2.length)L2.push('execute as @e[type=block_display,tag='+NEW+'] run data merge entity @s {'+TRANS+'}','tag @e[type=block_display,tag='+NEW+'] remove '+NEW);
@@ -2152,28 +2154,39 @@ async function dataPack(B,v,onProgress){
   BOX.push(piece(X/2-.04,-FEET+.02,-1.6,.08,.04,1.52,'light_blue_concrete'),piece(X/2-.04,-FEET+.02,Z+.08,.08,.04,1.52,'light_blue_concrete'),
     piece(-1.6,-FEET+.02,Z/2-.04,1.52,.04,.08,'light_blue_concrete'),piece(X+.08,-FEET+.02,Z/2-.04,1.52,.04,.08,'light_blue_concrete'));
   F['interno/scatola']=BOX;
-  F['interno/esci']=['kill @e[type=block_display,tag='+PB+']','kill @e[type=marker,tag='+PV+']','kill @e[type=interaction,tag='+CK+']','scoreboard players set '+PM+' bpb 0','tag @a remove '+PZ];
+  // anteprima: la costruzione finita a grandezza vera, dentro la scatola. Solo i blocchi che si vedono da fuori (quelli chiusi su tutti i lati
+  // da blocchi pieni non servono), e solo se sono pochi abbastanza da poterli spostare insieme alla scatola senza appesantire il gioco
+  const PREVMAX=3000,SOL=new Map(),solid=id=>{if(!id)return false;let r=SOL.get(id);if(r==null){r=!!getDef(id).solid;SOL.set(id,r);}return r;};
+  const vis=PRE.filter(([x,y,z])=>!(solid(v.get(x+1,y,z))&&solid(v.get(x-1,y,z))&&solid(v.get(x,y+1,z))&&solid(v.get(x,y-1,z))&&solid(v.get(x,y,z+1))&&solid(v.get(x,y,z-1))));
+  const PREOK=vis.length>0&&vis.length<=PREVMAX;
+  if(PREOK)F['interno/anteprima']=vis.map(([x,y,z,sb])=>'summon block_display ~ ~ ~ {block_state:'+sb+',transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:['+f(x+.01)+','+f(y-FEET+.01)+','+f(z+.01)+'],scale:[0.98f,0.98f,0.98f]},brightness:{sky:15,block:15},teleport_duration:2,Tags:['+q(PB)+','+q('bpb_anteprima')+']}');
+  F['interno/esci']=['kill @e[type=block_display,tag='+PB+']','kill @e[type=marker,tag='+PV+']','kill @e[type=marker,tag='+PT+']','kill @e[type=interaction,tag='+CK+']','scoreboard players set '+PM+' bpb 0','tag @a remove '+PZ];
   // entra nella modalità: chi l'ha chiesta guida la scatola (se il comando arriva da un blocco comandi, il giocatore più vicino)
   F['interno/piazza']=[...OBJ,'function '+I+'esci','kill @e[type=block_display,tag='+G+']',...KILLG,'scoreboard players set '+ON+' bpb 0',ACT,L0,
     'tag @s[type=player] add '+PZ,'execute unless entity @a[tag='+PZ+'] run tag @p add '+PZ,
     'execute at @a[tag='+PZ+',limit=1] align xyz run summon marker ~ ~ ~ {Tags:['+q(PV)+']}',
+    'execute at @a[tag='+PZ+',limit=1] align xyz run summon marker ~ ~ ~ {Tags:['+q(PT)+']}',
     'execute at @e[type=marker,tag='+PV+',limit=1] run function '+I+'scatola',
+    ...(PREOK?['execute at @e[type=marker,tag='+PV+',limit=1] run function '+I+'anteprima']:[]),
     'execute at @a[tag='+PZ+',limit=1] run summon interaction ~ ~ ~ {width:1.2f,height:1.2f,Tags:['+q(CK)+']}',
     'scoreboard players set '+PM+' bpb 1',
     say(T('Guarda il punto dove vuoi l\'angolo della costruzione: la scatola gialla mostra lo spazio che occupa ({0} × {1}, alta {2}). La costruzione va verso est (+X) e verso sud (+Z).',X,Z,Y),'yellow'),
-    ...SOTTO,line([{text:T('Tasto sinistro: la metti lì. Tasto destro: annulli.'),color:'yellow'},B_HERE])];
+    ...SOTTO,...(PREOK?[]:[say(T('La costruzione ha molti blocchi in vista ({0}): per non rallentare il gioco l\'anteprima mostra solo la scatola.',NUM(BIG?B.total:vis.length)),'gray')]),
+    line([{text:T('Tasto sinistro: la metti lì. Tasto destro: annulli.'),color:'yellow'},B_HERE])];
   // ogni tick: prima i clic, poi la scatola si sposta dove guardi
   F['interno/piazza_tick']=['execute as @e[type=interaction,tag='+CK+'] if data entity @s interaction run function '+I+'annulla',
     'execute as @e[type=interaction,tag='+CK+'] if data entity @s attack run function '+I+'fissa',
     'execute if score '+PM+' bpb matches 1 run function '+I+'piazza_muovi'];
   F['interno/piazza_muovi']=['scoreboard players set '+RS+' bpb 0','execute anchored eyes positioned ^ ^ ^ run function '+I+'raggio',
-    'execute at @e[type=marker,tag='+PV+',limit=1] run tp @e[type=block_display,tag='+PB+'] ~ ~ ~',
+    // scatola e anteprima si spostano solo quando il punto mirato cambia davvero
+    'execute at @e[type=marker,tag='+PT+',limit=1] unless entity @e[type=marker,tag='+PV+',distance=..0.5] run function '+I+'segui',
     // l'entità invisibile davanti agli occhi raccoglie i clic e intanto impedisce di rompere blocchi per sbaglio
     'execute anchored eyes positioned ^ ^ ^1 run tp @e[type=interaction,tag='+CK+',limit=1] ~ ~-0.6 ~',
     'title @s actionbar '+q([{text:T('Tasto sinistro: metti qui la costruzione')+' · ',color:'yellow'},{text:T('Tasto destro: annulla'),color:'gray'}])];
+  F['interno/segui']=['tp @e[type=marker,tag='+PV+',limit=1] ~ ~ ~','tp @e[type=block_display,tag='+PB+'] ~ ~ ~'];
   // raggio: avanza di un quarto di blocco alla volta fino a 24 blocchi; il primo blocco pieno che incontra decide il punto (il blocco sopra)
   F['interno/raggio']=['scoreboard players add '+RS+' bpb 1',
-    'execute unless block ~ ~ ~ #'+ns+':vuoto align xyz positioned ~ ~1 ~ run tp @e[type=marker,tag='+PV+',limit=1] ~ ~ ~',
+    'execute unless block ~ ~ ~ #'+ns+':vuoto align xyz positioned ~ ~1 ~ run tp @e[type=marker,tag='+PT+',limit=1] ~ ~ ~',
     'execute unless block ~ ~ ~ #'+ns+':vuoto run scoreboard players set '+RS+' bpb 1000',
     'execute if score '+RS+' bpb matches ..96 positioned ^ ^ ^0.25 run function '+I+'raggio'];
   F['interno/fissa']=['kill @e[type=marker,tag='+O+']','execute at @e[type=marker,tag='+PV+',limit=1] run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',
