@@ -393,7 +393,6 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
             <li>Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).</li>
             <li>Sotto ogni livello la chat mostra dei pulsanti da cliccare: Indietro, Avanti, Misure, Mancano, Materiali, Tutto, Sposta e Togli. Non serve scrivere comandi.</li>
             <li>Misure: il pulsante accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso pulsante le spegne.</li>
-            <li>Per non scrivere comandi, usa <code class="dpcmd" data-f="attrezzi"></code>: ricevi una carota su un bastone (livello avanti) e un fungo distorto su un bastone (livello indietro), da usare con il tasto destro. Da accovacciato, la carota ti dice cosa manca e il fungo ti dà l'elenco completo dei materiali. Comandano il fantasma acceso per ultimo.</li>
             <li>Se preferisci i comandi: <code class="dpcmd" data-f="next"></code>, <code class="dpcmd" data-f="prev"></code>, <code class="dpcmd" data-f="sposta"></code>, <code class="dpcmd" data-f="qui"></code> (la mette dove hai i piedi), <code class="dpcmd" data-f="menu"></code> (rimostra i pulsanti) e gli altri con lo stesso nome dei pulsanti. Comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con <code class="dpcmd" data-ns="own" data-f="start"></code>.</li>
           </ol>
           <p>Servono i comandi attivi (trucchi in singolo giocatore, o operatore su un server) e Minecraft Java dalla 1.19.4 in poi.</p>
@@ -2043,16 +2042,16 @@ const dpNs=B=>'bpb_'+(slug((B.it&&B.it.name)||B.name).slice(0,24)||'struttura');
 // sopra questa soglia: niente fantasma completo e controlli solo vicino ai giocatori, per non bloccare il gioco
 const DPBIG=40000;
 async function dataPack(B,v,onProgress){
-  const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y,X=v.X,Z=v.Z;
+  const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y,X=v.X,Z=v.Z;
   const W=G+'_x',R=G+'_r',OK=G+'_ok'; // rosso: blocco sbagliato; arancione: giusto ma girato; OK: blocco giusto, fantasma nascosto (ricompare se il posto torna vuoto)
   // tutto quello che il giocatore non usa sta in "interno/", così tra i comandi suggeriti restano pochi nomi chiari
   const I=ns+':interno/';
   const E='#'+sl+'_e',A='#'+sl+'_a',PM='#'+sl+'_pm',RS='#'+sl+'_r',PV='bpbv_'+sl,PT='bpbw_'+sl,PB='bpbp_'+sl,CK='bpbk_'+sl,PZ='bpbz_'+sl;
-  // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
-  const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,US='bpbc'+ID,TR='bpbt'+ID,ACT='scoreboard players set #attivo bpb '+ID;
-  const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick',
-    // accovacciato: la statistica del tempo da accovacciati cresce a ogni tick; la azzeriamo a ogni tick (niente predicati: dalla 26.3 hanno cambiato formato)
-    'scoreboard objectives add '+US+' minecraft.custom:minecraft.sneak_time',
+  // ogni pack ha un suo numero: i comandi corti bpb: comandano il fantasma acceso per ultimo (#attivo)
+  const ID=1+crc32(new TextEncoder().encode(ns))%899999,TR='bpbt'+ID,ACT='scoreboard players set #attivo bpb '+ID;
+  // contatori della carota e del fungo usati come telecomando dalle versioni precedenti: ora ci sono i pulsanti in chat, si tolgono
+  const OLDOBJ=['bpba','bpbb','bpbc'].map(p=>'scoreboard objectives remove '+p+ID);
+  const OBJ=['scoreboard objectives add bpb dummy',
     // pulsanti in chat: usano /trigger, che non chiede conferma (dalla 1.21.6 gli altri comandi cliccati in chat la chiedono) e non richiede permessi
     'scoreboard objectives add '+TR+' trigger "Blocco per Blocco"'];
   const q=t=>JSON.stringify(t);
@@ -2097,7 +2096,7 @@ async function dataPack(B,v,onProgress){
     if(onProgress&&y%3===0)onProgress(y+1,Y);}
 
   /* ---------- comandi: ogni azione ha un numero, usato dai pulsanti in chat (/trigger) e dai comandi corti bpb: ---------- */
-  const CMDS=[['next',1],['prev',2],['show',3],['all',4],['clear',5],['materiali',6],['mancano',7],['misure',8],['attrezzi',9],['start',10],['sposta',11],['qui',12],['menu',13]];
+  const CMDS=[['next',1],['prev',2],['show',3],['all',4],['clear',5],['materiali',6],['mancano',7],['misure',8],['start',10],['sposta',11],['qui',12],['menu',13]];
   const B_PREV=btn('◀ '+T('Indietro'),2,T('Livello precedente')),B_NEXT=btn(T('Avanti')+' ▶',1,T('Livello successivo'),'green'),
     B_MIS=btn(T('Misure'),8,T('Accende o spegne le guide di misura')),B_MAN=btn(T('Mancano'),7,T('Cosa manca ancora in questo livello')),
     B_MAT=btn(T('Materiali'),6,T('Tutti i materiali della costruzione')),B_ALL=btn(T('Tutto'),4,T('Mostra tutta la costruzione')),
@@ -2131,8 +2130,8 @@ async function dataPack(B,v,onProgress){
       for(let i=1;i<n;i++)F.mancano.push('scoreboard players operation '+MS+' bpb += '+MT+' bpb');}
     F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
 
-  /* ---------- avvio: il primo fantasma installato diventa quello attivo, così i comandi corti e gli oggetti funzionano subito ---------- */
-  F['interno/load']=[...OBJ,'execute unless score #attivo bpb matches 1.. run '+ACT,
+  /* ---------- avvio: il primo fantasma installato diventa quello attivo, così i comandi corti funzionano subito ---------- */
+  F['interno/load']=[...OBJ,...OLDOBJ,'execute unless score #attivo bpb matches 1.. run '+ACT,
     say(T('Blocco per Blocco: fantasma di "{0}" pronto.',name),'yellow'),line([B_START,B_HERE,B_MAT])];
   const FEET=Math.max(0,Math.min(Y-1,B.feet|0));
   const SOTTO=FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto il punto scelto, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.',FEET),'yellow')]:[];
@@ -2246,24 +2245,9 @@ async function dataPack(B,v,onProgress){
     'execute '+AT+'as @e[type=block_display,tag='+R+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+I+'libero',
     // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente), nascosti o nessuno
     'execute if score '+ON+' bpb matches 1 unless entity '+LEFT+' run function '+I+'fine',
-    // clic destro con gli oggetti: una pausa di 8 tick evita di saltare più livelli tenendo premuto il tasto
-    'execute if score '+CD+' bpb matches 1.. run scoreboard players remove '+CD+' bpb 1',
-    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UA+'=1..}] run function '+I+'oggetti',
-    'execute if score #attivo bpb matches '+ID+' unless score '+CD+' bpb matches 1.. if entity @a[scores={'+UB+'=1..}] run function '+I+'oggetti',
-    'scoreboard players reset @a '+UA,'scoreboard players reset @a '+UB,'scoreboard players reset @a '+US,
     // pulsanti in chat
     'execute as @a[scores={'+TR+'=1..}] at @s run function '+I+'clic','scoreboard players enable @a '+TR,
     'execute if score '+PM+' bpb matches 1 as @a[tag='+PZ+',limit=1] at @s run function '+I+'piazza_tick'];
-  // carota: avanti (da accovacciato: cosa manca); fungo: indietro (da accovacciato: tutti i materiali)
-  F['interno/oggetti']=['scoreboard players set '+A+' bpb 0','execute if entity @a[scores={'+UB+'=1..}] run scoreboard players set '+A+' bpb 2',
-    'execute if entity @a[scores={'+UA+'=1..}] run scoreboard players set '+A+' bpb 1',
-    'execute if score '+A+' bpb matches 1.. if entity @a[scores={'+US+'=1..}] run scoreboard players add '+A+' bpb 2',
-    'execute if score '+A+' bpb matches 1..2 run scoreboard players set '+CD+' bpb 8','execute if score '+A+' bpb matches 3.. run scoreboard players set '+CD+' bpb 20',
-    'execute if score '+A+' bpb matches 1 run function '+ns+':next','execute if score '+A+' bpb matches 2 run function '+ns+':prev',
-    'execute if score '+A+' bpb matches 3 run function '+ns+':mancano','execute if score '+A+' bpb matches 4 run function '+ns+':materiali'];
-  F.attrezzi=[...OBJ,'give @s minecraft:carrot_on_a_stick','give @s minecraft:warped_fungus_on_a_stick',
-    say(T('Tasto destro con la carota su un bastone: livello avanti. Con il fungo distorto su un bastone: livello indietro. Comandano il fantasma che hai acceso per ultimo.'),'yellow'),
-    say(T('Da accovacciato: la carota ti dice cosa manca nel livello, il fungo l\'elenco dei materiali di tutta la costruzione.'),'yellow')];
   F['interno/fine']=['scoreboard players set '+ON+' bpb 3',
     'execute store result score '+N+' bpb if entity @e[type=block_display,tag='+R+']',
     'execute if score '+N+' bpb matches 1.. run tellraw @a '+q([{text:T('Fantasmi arancioni rimasti: '),color:'gold'},{score:{name:N,objective:'bpb'},color:'gold'},{text:T(' (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.'),color:'gold'}]),
