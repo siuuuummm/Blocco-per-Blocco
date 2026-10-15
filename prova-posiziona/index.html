@@ -391,6 +391,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
             <li>Compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso. Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
             <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
             <li>Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).</li>
+            <li>Se nel mondo hai più costruzioni, dopo <code>/reload</code> la chat mostra una riga sola: clicca <b>[Mostra l'elenco]</b> (oppure scrivi <code class="dpcmd" data-f="lista"></code>) e scegli quale iniziare.</li>
             <li>Sotto ogni livello la chat mostra dei pulsanti da cliccare: Indietro, Avanti, Misure, Mancano, Materiali, Tutto, Sposta e Togli. Non serve scrivere comandi.</li>
             <li>Misure: il pulsante accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso pulsante le spegne.</li>
             <li>Se preferisci i comandi: <code class="dpcmd" data-f="next"></code>, <code class="dpcmd" data-f="prev"></code>, <code class="dpcmd" data-f="sposta"></code>, <code class="dpcmd" data-f="qui"></code> (la mette dove hai i piedi), <code class="dpcmd" data-f="menu"></code> (rimostra i pulsanti) e gli altri con lo stesso nome dei pulsanti. Comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con <code class="dpcmd" data-ns="own" data-f="start"></code>.</li>
@@ -875,6 +876,15 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "(la mette dove hai i piedi),": "(puts it where you stand),",
 "(rimostra i pulsanti) e gli altri con lo stesso nome dei pulsanti. Comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con": "(shows the buttons again) and the others named like the buttons. They control the ghost you turned on last; if you have several ghosts installed, turn the first one on with",
 "Misure": "Measure",
+"Se nel mondo hai più costruzioni, dopo": "If the world has several builds, after",
+"la chat mostra una riga sola: clicca": "the chat shows a single line: click",
+"[Mostra l'elenco]": "[Show the list]",
+"(oppure scrivi": "(or type",
+") e scegli quale iniziare.": ") and choose which one to start.",
+"Mostra l'elenco": "Show the list",
+"Tutte le costruzioni installate, ognuna con i suoi pulsanti": "All the installed builds, each with its own buttons",
+"Costruzioni di Blocco per Blocco in questo mondo:": "Blocco per Blocco builds in this world:",
+" costruzioni pronte. ": " builds ready. ",
 "Accende o spegne le guide di misura": "Turns the measuring guides on or off",
 "Mancano": "Missing",
 "Cosa manca ancora in questo livello": "What is still missing in this layer",
@@ -2053,7 +2063,9 @@ async function dataPack(B,v,onProgress){
   const OLDOBJ=['bpba','bpbb','bpbc'].map(p=>'scoreboard objectives remove '+p+ID);
   const OBJ=['scoreboard objectives add bpb dummy',
     // pulsanti in chat: usano /trigger, che non chiede conferma (dalla 1.21.6 gli altri comandi cliccati in chat la chiedono) e non richiede permessi
-    'scoreboard objectives add '+TR+' trigger "Blocco per Blocco"'];
+    'scoreboard objectives add '+TR+' trigger "Blocco per Blocco"',
+    // obiettivo comune a tutti i pack: il pulsante [Mostra l'elenco]
+    'scoreboard objectives add bpbt trigger "Blocco per Blocco"'];
   const q=t=>JSON.stringify(t);
   const say=(t,col)=>'tellraw @a '+q({text:t,color:col||'green'});
   const name=B.name.replace(/[\u0000-\u001f]/g,' ');
@@ -2131,8 +2143,12 @@ async function dataPack(B,v,onProgress){
     F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
 
   /* ---------- avvio: il primo fantasma installato diventa quello attivo, così i comandi corti funzionano subito ---------- */
-  F['interno/load']=[...OBJ,...OLDOBJ,'execute unless score #attivo bpb matches 1.. run '+ACT,
-    say(T('Blocco per Blocco: fantasma di "{0}" pronto.',name),'yellow'),line([B_START,B_HERE,B_MAT])];
+  // al caricamento nessun pack scrive niente da solo: chiede un annuncio unico, che il primo tick scrive una volta per tutti
+  // (una costruzione: la sua riga con i pulsanti; più costruzioni: una riga con [Mostra l'elenco])
+  F['interno/load']=[...OBJ,...OLDOBJ,'execute unless score #attivo bpb matches 1.. run '+ACT,'scoreboard players set #annuncio bpb 1'];
+  // la riga di questa costruzione nell'elenco comune (tag #bpb:elenco) e il conteggio (tag #bpb:conta)
+  F['interno/elenco']=[line([{text:name,color:'gold',hoverEvent:{action:'show_text',contents:X+' × '+Z+' × '+Y+' · '+T('{0} blocchi',NUM(B.total))},hover_event:{action:'show_text',value:X+' × '+Z+' × '+Y+' · '+T('{0} blocchi',NUM(B.total))}},B_START,B_HERE,B_MAT])];
+  F['interno/conta']=['scoreboard players add #bpb_n bpb 1'];
   const FEET=Math.max(0,Math.min(Y-1,B.feet|0));
   const SOTTO=FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto il punto scelto, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.',FEET),'yellow')]:[];
   const L0='execute unless score '+L+' bpb matches 0.. run scoreboard players set '+L+' bpb 0';
@@ -2247,6 +2263,9 @@ async function dataPack(B,v,onProgress){
     'execute if score '+ON+' bpb matches 1 unless entity '+LEFT+' run function '+I+'fine',
     // pulsanti in chat
     'execute as @a[scores={'+TR+'=1..}] at @s run function '+I+'clic','scoreboard players enable @a '+TR,
+    // annuncio unico dopo /reload e pulsante comune [Mostra l'elenco]: li gestisce il primo pack che arriva, gli altri trovano già fatto
+    'execute if score #annuncio bpb matches 1 run function bpb:interno/annuncio',
+    'execute as @a[scores={bpbt=1..}] run function bpb:interno/lista_clic','scoreboard players enable @a bpbt',
     'execute if score '+PM+' bpb matches 1 as @a[tag='+PZ+',limit=1] at @s run function '+I+'piazza_tick'];
   F['interno/fine']=['scoreboard players set '+ON+' bpb 3',
     'execute store result score '+N+' bpb if entity @e[type=block_display,tag='+R+']',
@@ -2293,6 +2312,14 @@ async function dataPack(B,v,onProgress){
   // spazi che contano come vuoti: aria, liquidi ed erba o neve che si tolgono da sole quando piazzi un blocco
   const VUOTO={values:['minecraft:air','minecraft:cave_air','minecraft:void_air','minecraft:water','minecraft:lava','minecraft:tall_grass','minecraft:fern','minecraft:large_fern','minecraft:snow','minecraft:seagrass','minecraft:tall_seagrass','minecraft:dead_bush',
     {id:'minecraft:short_grass',required:false},{id:'minecraft:grass',required:false},{id:'minecraft:light',required:false}]};
+  const B_LIST={text:'['+T('Mostra l\'elenco')+']',color:'aqua',clickEvent:{action:'run_command',value:'/trigger bpbt set 1'},click_event:{action:'run_command',command:'/trigger bpbt set 1'},
+    hoverEvent:{action:'show_text',contents:T('Tutte le costruzioni installate, ognuna con i suoi pulsanti')},hover_event:{action:'show_text',value:T('Tutte le costruzioni installate, ognuna con i suoi pulsanti')}};
+  const SHARED={
+    lista:['scoreboard objectives add bpb dummy',say(T('Costruzioni di Blocco per Blocco in questo mondo:'),'yellow'),'function #bpb:elenco'],
+    'interno/annuncio':['scoreboard players set #annuncio bpb 0','scoreboard players set #bpb_n bpb 0','function #bpb:conta',
+      'execute if score #bpb_n bpb matches 1 run function #bpb:elenco',
+      'execute if score #bpb_n bpb matches 2.. run tellraw @a '+q(['',{text:'Blocco per Blocco: ',color:'yellow'},{score:{name:'#bpb_n',objective:'bpb'},color:'yellow'},{text:T(' costruzioni pronte. '),color:'yellow'},B_LIST])],
+    'interno/lista_clic':['scoreboard players reset @s bpbt','function bpb:lista']};
   const te=new TextEncoder(),files=[];
   const meta={pack:{pack_format:15,supported_formats:{min_inclusive:12,max_inclusive:999},min_format:12,max_format:999,description:T('Blocco per Blocco: fantasma di {0}',name)}};
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
@@ -2304,6 +2331,10 @@ async function dataPack(B,v,onProgress){
     // comandi corti: uguali in tutti i pack; il tag bpb:cmd raccoglie il pezzo di ogni pack installato
     for(const[c,n]of CMDS)files.push({name:'data/bpb/'+dir+'/'+c+'.mcfunction',data:te.encode('scoreboard objectives add bpb dummy\nscoreboard players set #cmd bpb '+n+'\nfunction #bpb:cmd\n')});
     files.push({name:'data/bpb/tags/'+dir+'/cmd.json',data:te.encode(JSON.stringify({values:[{id:I+'cmd',required:false}]}))});
+    // elenco comune: uguale in tutti i pack, i tag raccolgono una riga e un conteggio da ogni pack installato
+    for(const[fn,body]of Object.entries(SHARED))files.push({name:'data/bpb/'+dir+'/'+fn+'.mcfunction',data:te.encode(body.join('\n')+'\n')});
+    files.push({name:'data/bpb/tags/'+dir+'/elenco.json',data:te.encode(JSON.stringify({values:[{id:I+'elenco',required:false}]}))});
+    files.push({name:'data/bpb/tags/'+dir+'/conta.json',data:te.encode(JSON.stringify({values:[{id:I+'conta',required:false}]}))});
     files.push({name:'data/minecraft/tags/'+dir+'/tick.json',data:te.encode(JSON.stringify({values:[I+'tick']}))});
     files.push({name:'data/minecraft/tags/'+dir+'/load.json',data:te.encode(JSON.stringify({values:[I+'load']}))});}
   return zipC(files);
