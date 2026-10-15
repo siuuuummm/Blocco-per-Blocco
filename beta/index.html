@@ -391,6 +391,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
             <li>Scrivi <code class="dpcmd" data-f="start"></code>: compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso. I comandi corti <code>bpb:</code> comandano il fantasma acceso per ultimo; se hai più fantasmi installati, il primo lo accendi con <code class="dpcmd" data-ns="own" data-f="start"></code>.</li>
             <li>Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
             <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
+            <li>Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).</li>
             <li>Per costruire in ordine: <code class="dpcmd" data-f="misure"></code> accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso comando le spegne.</li>
             <li>Per i materiali: <code class="dpcmd" data-f="materiali"></code> elenca tutto quello che serve per la costruzione, con i posti nell'inventario, e <code class="dpcmd" data-f="mancano"></code> quello che manca ancora nel fantasma acceso. A ogni cambio di livello la chat ti dice cosa serve per quel livello. I nomi dei blocchi sono nella lingua del gioco.</li>
             <li>Cambia livello con <code class="dpcmd" data-f="next"></code> e <code class="dpcmd" data-f="prev"></code>. Con <code class="dpcmd" data-f="all"></code> vedi tutto e con <code class="dpcmd" data-f="show"></code> torni al livello a cui eri. Con <code class="dpcmd" data-f="clear"></code> togli il fantasma.</li>
@@ -856,6 +857,8 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "_livelli_{0}-{1}": "_layers_{0}-{1}",
 "Scaricato: il manuale è diviso in {0} PDF (uno ogni circa 200 pagine), raccolti in uno zip.": "Downloaded: the manual is split into {0} PDFs (one every 200 pages or so), collected in a zip.",
 "Verrà diviso in più PDF da circa 200 pagine, raccolti in uno zip.": "It will be split into several PDFs of about 200 pages, collected in a zip.",
+"Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).": "If you break a correct block by mistake, its ghost comes back and the bottom of the screen tells you which block goes there, so no hole is left. This works for the layer that is on (or for everything with the full ghost).",
+"Blocco tolto: qui va ": "Block removed: this needs ",
 "Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; /function {2}:misure le spegne.": "Measurements on: outline of {0} × {1} blocks on the current layer, orange ticks every 5 blocks (longer every 10), the centre in light blue. They follow the layer; /function {2}:misure turns them off.",
 "Misure spente.": "Measurements off.",
 "Per costruire in ordine:": "To build neatly:",
@@ -1996,7 +1999,8 @@ const dpNs=B=>'bpb_'+(slug((B.it&&B.it.name)||B.name).slice(0,24)||'struttura');
 const DPBIG=40000;
 async function dataPack(B,v,onProgress){
   const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',CD='#'+sl+'_cd',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y;
-  const W=G+'_x',R=G+'_r'; // fantasma rosso: blocco sbagliato; arancione: blocco giusto ma girato in un altro modo
+  const W=G+'_x',R=G+'_r',OK=G+'_ok'; // fantasma rosso: blocco sbagliato; arancione: blocco giusto ma girato in un altro modo
+  // OK: blocco giusto piazzato; il fantasma resta nel mondo nascosto (grandezza 0, senza contorno) e ricompare se il blocco viene tolto o cambiato
   // oggetti telecomando: ogni pack ha i suoi contatori d'uso, così due fantasmi accesi non si disturbano; comanda il fantasma acceso per ultimo
   const ID=1+crc32(new TextEncoder().encode(ns))%899999,UA='bpba'+ID,UB='bpbb'+ID,US='bpbc'+ID,ACT='scoreboard players set #attivo bpb '+ID;
   const OBJ=['scoreboard objectives add bpb dummy','scoreboard objectives add '+UA+' minecraft.used:minecraft.carrot_on_a_stick','scoreboard objectives add '+UB+' minecraft.used:minecraft.warped_fungus_on_a_stick',
@@ -2047,11 +2051,11 @@ async function dataPack(B,v,onProgress){
   F.materiali=['tellraw @a '+q({text:T('Materiali per tutta la costruzione "{0}" ({1}):',name,slotText(all)),color:'gold'})];
   for(const g of grp){const st=stacks(g.r.n,g.r.d);F.materiali.push('tellraw @a '+q([{text:' • '+g.r.n+' ',color:'white'},tr(g.mc,g.r.d.name),...(st?[{text:'  ('+st+')',color:'gray'}]:[])]));}
   // cosa manca davvero adesso: conta i fantasmi ancora accesi di ogni materiale (gli arancioni hanno già il blocco giusto)
-  F.mancano=['execute unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.','bpb'),'yellow'),
-    'execute if entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run '+say(T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
-  for(const g of grp){const sel='@e[type=block_display,tag='+G+'_m'+g.j+',tag=!'+R+']';
+  F.mancano=['execute unless entity @e[type=block_display,tag='+G+',tag=!'+R+',tag=!'+OK+',limit=1] run '+say(T('Non manca niente: nessun fantasma da completare. /function {0}:next passa al livello successivo, :show rimette il fantasma del livello.','bpb'),'yellow'),
+    'execute if entity @e[type=block_display,tag='+G+',tag=!'+R+',tag=!'+OK+',limit=1] run '+say(T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
+  for(const g of grp){const sel='@e[type=block_display,tag='+G+'_m'+g.j+',tag=!'+R+',tag=!'+OK+']';
     F.mancano.push('execute store result score '+MS+' bpb if entity '+sel);
-    for(const n of g.mul){F.mancano.push('execute store result score '+MT+' bpb if entity @e[type=block_display,tag='+G+'_m'+g.j+'_'+n+',tag=!'+R+']');
+    for(const n of g.mul){F.mancano.push('execute store result score '+MT+' bpb if entity @e[type=block_display,tag='+G+'_m'+g.j+'_'+n+',tag=!'+R+',tag=!'+OK+']');
       for(let i=1;i<n;i++)F.mancano.push('scoreboard players operation '+MS+' bpb += '+MT+' bpb');}
     F.mancano.push('execute if score '+MS+' bpb matches 1.. run tellraw @a '+q([{text:' • ',color:'gray'},{score:{name:MS,objective:'bpb'},color:'white'},{text:' '},tr(g.mc,g.r.d.name)]));}
   // il primo fantasma installato diventa quello attivo, così i comandi corti bpb:... funzionano subito
@@ -2088,7 +2092,7 @@ async function dataPack(B,v,onProgress){
     'execute if score '+L+' bpb matches '+y+' run '+say(T(cnt[y]===1?'{0}: livello {1} di {2}, {3} blocco. Comandi: {4}':'{0}: livello {1} di {2}, {3} blocchi. Comandi: {4}',name,y+1,Y,cnt[y],cmds)),
     'execute if score '+L+' bpb matches '+y+' run function '+ns+':mat/'+(y+1));
   F.show.push('execute if score '+GD+' bpb matches 1 run function '+ns+':misure/qui');
-  F.show.push('execute store result score '+N+' bpb if entity @e[type=block_display,tag='+G+']','tellraw @a '+q([{text:T('Fantasmi visibili nel mondo: '),color:'gray'},{score:{name:N,objective:'bpb'},color:'gray'}]));
+  F.show.push('execute store result score '+N+' bpb if entity @e[type=block_display,tag='+G+',tag=!'+OK+']','tellraw @a '+q([{text:T('Fantasmi visibili nel mondo: '),color:'gray'},{score:{name:N,objective:'bpb'},color:'gray'}]));
   // avanti e indietro saltano i livelli rimasti vuoti (per esempio dopo aver escluso il terreno)
   const NZ=cnt.map((n,y)=>n?y:-1).filter(y=>y>=0),TMP='#'+sl+'_s';
   const step=(a,b)=>'execute if score '+L+' bpb matches '+a+' run scoreboard players set '+TMP+' bpb '+b;
@@ -2107,7 +2111,7 @@ async function dataPack(B,v,onProgress){
     'execute '+AT+'as @e[type=block_display,tag='+W+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
     'execute '+AT+'as @e[type=block_display,tag='+R+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+ns+':libero',
     // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente) o nessuno
-    'execute if score '+ON+' bpb matches 1 unless entity @e[type=block_display,tag='+G+',tag=!'+R+',limit=1] run function '+ns+':done',
+    'execute if score '+ON+' bpb matches 1 unless entity @e[type=block_display,tag='+G+',tag=!'+R+',tag=!'+OK+',limit=1] run function '+ns+':done',
     // clic destro con gli oggetti: una pausa di 8 tick evita di saltare più livelli tenendo premuto il tasto
     'execute if score '+CD+' bpb matches 1.. run scoreboard players remove '+CD+' bpb 1',
     // da accovacciato gli stessi oggetti mostrano i materiali invece di cambiare livello
@@ -2129,6 +2133,11 @@ async function dataPack(B,v,onProgress){
     'execute if score '+L+' bpb matches ..'+(Y-2)+' run '+say(T('Livello completato! Scrivi /function {0}:next per il prossimo.','bpb'),'gold'),
     'execute if score '+L+' bpb matches '+(Y-1)+' run '+say(T('Costruzione finita: "{0}" è completa!',name),'gold')];
   F.libero=['tag @s remove '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:-1}'];
+  const HIDE='transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.5f,0.5f,0.5f],scale:[0f,0f,0f]},Glowing:0b,glow_color_override:-1';
+  F.fatto=['tag @s add '+OK,'tag @s remove '+W,'tag @s remove '+R,'data merge entity @s {'+HIDE+'}'];
+  // il blocco giusto è stato tolto: il fantasma torna com'era e, se il livello era finito, torna da completare
+  F.riappare=['tag @s remove '+OK,'data merge entity @s {'+TRANS+',glow_color_override:-1}','execute if score '+ON+' bpb matches 3 run scoreboard players set '+ON+' bpb 1',
+    'playsound minecraft:block.note_block.pling master @p ~ ~ ~ 0.6 0.7'];
   const SHORT=['start','next','prev','all','show','clear','attrezzi','materiali','mancano','misure'];
   for(const c of SHORT)F['cmd/'+c]=['execute if score #attivo bpb matches '+ID+' run function '+ns+':'+c];
   const tagVals=[];
@@ -2137,20 +2146,26 @@ async function dataPack(B,v,onProgress){
   for(const[exact,k]of kinds){const kf=KINF[k],gs='@e[type=block_display,tag='+G+'_'+k+NEAR;
     if(FLUID.has(kf.base)){
       // per acqua e lava basta che lo spazio non sia più vuoto: il secchio può lasciare acqua corrente o un blocco riempito d'acqua
-      F['check/'+k]=['execute as '+gs+'] at @s unless block ~ ~ ~ minecraft:air unless block ~ ~ ~ minecraft:cave_air run kill @s'];}
+      F['check/'+k]=['execute as '+gs+',tag='+OK+'] at @s if block ~ ~ ~ minecraft:air run function '+ns+':riappare/'+k,
+        'execute as '+gs+',tag='+OK+'] at @s if block ~ ~ ~ minecraft:cave_air run function '+ns+':riappare/'+k,
+        'execute as '+gs+',tag=!'+OK+'] at @s unless block ~ ~ ~ minecraft:air unless block ~ ~ ~ minecraft:cave_air run function '+ns+':fatto'];}
     else{
-      F['check/'+k]=['execute as '+gs+'] at @s if block ~ ~ ~ '+exact+' run kill @s',
-        'execute as '+gs+',tag=!'+W+'] at @s unless block ~ ~ ~ '+kf.base+' unless block ~ ~ ~ #'+ns+':vuoto run function '+ns+':sbagliato/'+k];
+      // ricompare solo quando lo spazio torna vuoto (blocco rotto, spinto via...), non quando il blocco cambia da solo (erba che diventa terra, rame che si ossida)
+      F['check/'+k]=['execute as '+gs+',tag='+OK+'] at @s if block ~ ~ ~ #'+ns+':vuoto unless block ~ ~ ~ '+exact+' run function '+ns+':riappare/'+k,
+        'execute as '+gs+',tag=!'+OK+'] at @s if block ~ ~ ~ '+exact+' run function '+ns+':fatto',
+        'execute as '+gs+',tag=!'+W+',tag=!'+OK+'] at @s unless block ~ ~ ~ '+kf.base+' unless block ~ ~ ~ #'+ns+':vuoto run function '+ns+':sbagliato/'+k];
       F['sbagliato/'+k]=['tag @s add '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:16711680}',
         'title @p actionbar '+q([{text:T('Blocco sbagliato: qui va '),color:'red'},tr(kf.item,kf.fb,'yellow')]),
         'playsound minecraft:block.note_block.bass master @p ~ ~ ~ 0.8 0.6'];
       if(exact!==kf.base){
-        F['check/'+k].push('execute as '+gs+',tag=!'+R+'] at @s if block ~ ~ ~ '+kf.base+' run function '+ns+':girato/'+k);
+        F['check/'+k].push('execute as '+gs+',tag=!'+R+',tag=!'+OK+'] at @s if block ~ ~ ~ '+kf.base+' run function '+ns+':girato/'+k);
         F['girato/'+k]=['tag @s add '+R,'tag @s remove '+W,'data merge entity @s {glow_color_override:16753920}',
           'title @p actionbar '+q([{text:T('Blocco giusto ma girato in un altro modo: '),color:'gold'},tr(kf.item,kf.fb,'yellow'),{text:T('. Guarda il modello 3D nell\'app.'),color:'gold'}])];}}
+    F['riappare/'+k]=['function '+ns+':riappare','title @p actionbar '+q([{text:T('Blocco tolto: qui va '),color:'aqua'},tr(kf.item,kf.fb,'yellow')])];
     tagVals.push({id:ns+':check/'+k,required:false});
     // blocchi rinominati tra una versione e l'altra: un secondo controllo con l'altro nome; la versione che non lo conosce lo salta
-    const alt=RENB[kf.base];if(alt){F['check/'+k+'_alt']=['execute as '+gs+'] at @s if block ~ ~ ~ '+alt+exact.slice(kf.base.length)+' run kill @s'];tagVals.push({id:ns+':check/'+k+'_alt',required:false});}}
+    const alt=RENB[kf.base];if(alt){const ax=alt+exact.slice(kf.base.length);
+      F['check/'+k+'_alt']=['execute as '+gs+',tag='+OK+'] at @s if block ~ ~ ~ #'+ns+':vuoto unless block ~ ~ ~ '+ax+' run function '+ns+':riappare/'+k,'execute as '+gs+',tag=!'+OK+'] at @s if block ~ ~ ~ '+ax+' run function '+ns+':fatto'];tagVals.push({id:ns+':check/'+k+'_alt',required:false});}}
   // spazi che contano come vuoti: aria, liquidi ed erba o neve che si tolgono da sole quando piazzi un blocco
   const VUOTO={values:['minecraft:air','minecraft:cave_air','minecraft:void_air','minecraft:water','minecraft:lava','minecraft:tall_grass','minecraft:fern','minecraft:large_fern','minecraft:snow','minecraft:seagrass','minecraft:tall_seagrass','minecraft:dead_bush',
     {id:'minecraft:short_grass',required:false},{id:'minecraft:grass',required:false},{id:'minecraft:light',required:false}]};
