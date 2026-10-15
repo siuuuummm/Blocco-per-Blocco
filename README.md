@@ -17,7 +17,7 @@ L'app è in **italiano e inglese**.
 
 ### Cosa fa
 
-- **Libreria di 22 costruzioni**: case, torri, castelli, fattorie e decorazioni, con stili di materiali da cambiare con un clic.
+- **Libreria di costruzioni**: case, torri, castelli, fattorie e decorazioni già pronte, con stili di materiali da cambiare con un clic, più tutte quelle che importi tu.
 - **Importazione di file di struttura**: `.schem` (WorldEdit), `.litematic` (Litematica) e `.nbt` (blocco struttura), comprese le versioni 26.x.
   Se il file contiene anche il terreno (terra, pietra, minerali), l'app lo esclude da sola: quei blocchi non hanno fantasma e non contano nei materiali. Puoi rimetterli o escludere a mano qualsiasi altro materiale. Se la costruzione va sotto terra, il fantasma parte dal numero giusto di blocchi sotto i tuoi piedi.
 - **Per ogni costruzione**:
@@ -100,7 +100,7 @@ The app is available in **Italian and English**.
 
 ### Features
 
-- **Library of 22 builds**: houses, towers, castles, farms and decorations, with material styles you can swap with one click.
+- **Build library**: ready-made houses, towers, castles, farms and decorations, with material styles you can swap with one click, plus every build you import.
 - **Structure file import**: `.schem` (WorldEdit), `.litematic` (Litematica) and `.nbt` (structure block), including 26.x versions.
   If the file also contains the terrain (dirt, stone, ores), the app excludes it automatically: those blocks get no ghost and are not counted in materials. You can bring them back or exclude any other material by hand. If the build goes underground, the ghost starts the right number of blocks below your feet.
 - **For every build**:
