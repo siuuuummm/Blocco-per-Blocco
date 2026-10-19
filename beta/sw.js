@@ -1,7 +1,7 @@
 /* Blocco per Blocco: lavoratore di servizio per usare l'app anche senza internet.
    La pagina arriva prima dalla rete (così si vede sempre l'ultima versione) e dalla copia salvata solo se sei offline;
    librerie, caratteri e icone arrivano dalla copia salvata, aggiornata in sottofondo. Non salva altro. */
-const V='bpb-0.5';
+const V='bpb-0.5.1';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 const LIBS=['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js',
   'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];

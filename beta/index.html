@@ -391,6 +391,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
             <li>Compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso. Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
             <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
             <li>Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).</li>
+            <li>Costruzioni molto grandi (oltre 40.000 blocchi, come uno stadio): i fantasmi compaiono solo intorno a chi gioca e lo seguono mentre si muove, così il gioco non rallenta. Il messaggio di livello completato non c'è, perché non si vede tutto il livello insieme: usa [Mancano] per la zona vicino a te.</li>
             <li>Se nel mondo hai più costruzioni, dopo <code>/reload</code> la chat mostra una riga sola: clicca <b>[Mostra l'elenco]</b> (oppure scrivi <code class="dpcmd" data-f="lista"></code>) e scegli quale iniziare.</li>
             <li>Sotto ogni livello la chat mostra dei pulsanti da cliccare: Indietro, Avanti, Misure, Mancano, Materiali, Tutto, Sposta, Ruota e Togli. Non serve scrivere comandi.</li>
             <li>Misure: il pulsante accende le guide di misura sul livello corrente: il contorno della costruzione, tacche arancioni ogni 5 blocchi (più lunghe ogni 10) e il centro in azzurro. Seguono il livello quando cambi; lo stesso pulsante le spegne.</li>
@@ -925,7 +926,11 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "La costruzione ha molti blocchi in vista ({0}): per non rallentare il gioco l'anteprima mostra solo la scatola.": "The build has many visible blocks ({0}): to keep the game smooth the preview shows only the box.",
 "{0}: livello {1} di {2}, {3} blocchi.": "{0}: layer {1} of {2}, {3} blocks.",
 "Il livello 1 è sotto terra: compare un blocco sotto il punto scelto, scava lì.": "Layer 1 is underground: it appears one block below the chosen spot, dig there.",
-"I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below the chosen spot, dig there."
+"I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below the chosen spot, dig there.",
+"Scaricato. Costruzione molto grande: in gioco i fantasmi compaiono solo intorno a chi gioca (per qualche decina di blocchi) e seguono chi si muove, così il gioco non rallenta; il fantasma completo (Tutto) è disattivato. Il primo /reload può richiedere qualche secondo.": "Downloaded. Very large build: in game the ghosts appear only around the players (for a few dozen blocks) and follow whoever moves, so the game stays smooth; the full ghost (All) is turned off. The first /reload may take a few seconds.",
+"Costruzione grande: i fantasmi compaiono solo nei {0} blocchi intorno a ogni giocatore e seguono chi si muove, così il gioco non rallenta.": "Large build: the ghosts appear only in the {0} blocks around each player and follow whoever moves, so the game stays smooth.",
+"Ti mancano ancora, nella zona vicino a te:": "Still missing, in the area near you:",
+"Costruzioni molto grandi (oltre 40.000 blocchi, come uno stadio): i fantasmi compaiono solo intorno a chi gioca e lo seguono mentre si muove, così il gioco non rallenta. Il messaggio di livello completato non c'è, perché non si vede tutto il livello insieme: usa [Mancano] per la zona vicino a te.": "Very large builds (over 40,000 blocks, like a stadium): the ghosts appear only around the players and follow them as they move, so the game stays smooth. There is no layer-done message, because the whole layer is never shown at once: use [Missing] for the area near you."
 };
 function T(s,...a){const t=(LANG==='en'&&EN[s])||s;return a.length?t.replace(/\{(\d)\}/g,(m,i)=>a[+i]):t;}
 const NUM=n=>Number(n).toLocaleString(LANG==='en'?'en-US':'it-IT');
@@ -2059,7 +2064,7 @@ const dpNs=B=>'bpb_'+(slug((B.it&&B.it.name)||B.name).slice(0,24)||'struttura');
 const DPBIG=40000;
 async function dataPack(B,v,onProgress){
   const ns=dpNs(B),sl=ns.slice(4),G='bpbg_'+sl,O='bpbo_'+sl,L='#'+sl,ON='#'+sl+'_on',N='#'+sl+'_n',MS='#'+sl+'_m',MT='#'+sl+'_t',Y=v.Y,X=v.X,Z=v.Z;
-  const W=G+'_x',R=G+'_r',OK=G+'_ok'; // rosso: blocco sbagliato; arancione: giusto ma girato; OK: blocco giusto, fantasma nascosto (ricompare se il posto torna vuoto)
+  const W=G+'_x',R=G+'_r',OK=G+'_ok',GEN='#'+sl+'_gen',FC='#'+sl+'_fc'; // rosso: blocco sbagliato; arancione: giusto ma girato; OK: blocco giusto, fantasma nascosto (ricompare se il posto torna vuoto)
   // tutto quello che il giocatore non usa sta in "interno/", così tra i comandi suggeriti restano pochi nomi chiari
   const I=ns+':interno/';
   const E='#'+sl+'_e',A='#'+sl+'_a',PM='#'+sl+'_pm',ROT='#'+sl+'_rot',RO='#'+sl+'_ro',RG='#'+sl+'_rg',RCD='#'+sl+'_rcd',OR='bpbr_'+sl,RS='#'+sl+'_r',PV='bpbv_'+sl,PT='bpbw_'+sl,PB='bpbp_'+sl,CK='bpbk_'+sl,PZ='bpbz_'+sl;
@@ -2071,7 +2076,10 @@ async function dataPack(B,v,onProgress){
     // pulsanti in chat: usano /trigger, che non chiede conferma (dalla 1.21.6 gli altri comandi cliccati in chat la chiedono) e non richiede permessi
     'scoreboard objectives add '+TR+' trigger "Blocco per Blocco"',
     // obiettivo comune a tutti i pack: il pulsante [Mostra l'elenco]
-    'scoreboard objectives add bpbt trigger "Blocco per Blocco"'];
+    'scoreboard objectives add bpbt trigger "Blocco per Blocco"',
+    // generazione dei fantasmi: cresce a ogni cambio di livello, spostamento o Togli; un fantasma di una generazione vecchia
+    // (rimasto in una zona che non era caricata) sparisce appena un giocatore passa vicino
+    'scoreboard objectives add bpbgen dummy'];
   const q=t=>JSON.stringify(t);
   const f=n=>(Math.round(n*1000)/1000)+'f',cc=n=>String(Math.round(n*1000)/1000);
   const say=(t,col)=>'tellraw @a '+q({text:t,color:col||'green'});
@@ -2112,7 +2120,12 @@ async function dataPack(B,v,onProgress){
   // i livelli si preparano e comprimono uno alla volta, così anche le costruzioni enormi non riempiono la memoria
   const BIG=B.total>DPBIG,NEW=G+'_n',SN=new Map(),LAY=[],PRE=[],OST=new Map();
   const TRANS='transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[-0.25f,0.25f,-0.25f],scale:[0.5f,0.5f,0.5f]},brightness:{sky:15,block:15},Glowing:1b'; // il fantasma sta al centro del suo posto
-  for(let y=0;y<Y;y++){const L2=[];
+  // costruzioni grandi: ogni livello è diviso in riquadri da 16 × 16 (nelle coordinate della costruzione, quindi girano con lei);
+  // compaiono solo i riquadri vicino ai giocatori, così ci sono pochi fantasmi alla volta e tutti in zone caricate
+  let TRAD=2;const TS=16,TZN=Math.ceil(Z/TS),tileOf=(x,z)=>Math.floor(x/TS)*TZN+Math.floor(z/TS),TILES=new Map(),LTILES=[];
+  const ENDL=['execute unless score '+ROT+' bpb matches 0 run function '+I+'ruota_stati',
+    'scoreboard players operation @e[type=block_display,tag='+NEW+'] bpbgen = '+GEN+' bpbgen','tag @e[type=block_display,tag='+NEW+'] remove '+NEW];
+  for(let y=0;y<Y;y++){const L2=[],TL=new Map();
     for(const c of v.layers[y]){const st=mcState(c.id,v,c.x,y,c.z);let show=st;
       if(st.n==='minecraft:water'||st.n==='minecraft:bubble_column')show={n:'minecraft:light_blue_stained_glass',p:{}};
       else if(st.n==='minecraft:lava')show={n:'minecraft:orange_stained_glass',p:{}};
@@ -2128,10 +2141,22 @@ async function dataPack(B,v,onProgress){
       if(stateKey(rotSt(show,1))!==sk||stateKey(rotSt(show,2))!==sk){let o=OST.get(sk);if(!o){o={i:OST.size,st:show};OST.set(sk,o);}tags.push(G+'_s'+o.i);}
       // costruzioni grandi: comando corto, e le impostazioni comuni (dimensione, luce, contorno) una volta sola per livello
       // coordinate locali: il livello si crea dal punto girato (marker con la rotazione), quindi le posizioni girano da sole
-      L2.push('summon block_display ^'+cc(c.x+.5)+' ^'+y+' ^'+cc(c.z+.5)+' {block_state:'+sb+(BIG?'':','+TRANS)+',Tags:['+tags.map(q).join(',')+','+q(NEW)+']}');}
-    if(L2.length){if(BIG)L2.push('execute as @e[type=block_display,tag='+NEW+'] run data merge entity @s {'+TRANS+'}');
-      L2.push('execute unless score '+ROT+' bpb matches 0 run function '+I+'ruota_stati','tag @e[type=block_display,tag='+NEW+'] remove '+NEW);}
-    cnt.push(v.layers[y].length);LAY.push(await packText(L2.join('\n')+'\n'));
+      const ti=tileOf(c.x,c.z);if(BIG)tags.push(G+'_t'+ti);
+      const cmd='summon block_display ^'+cc(c.x+.5)+' ^'+y+' ^'+cc(c.z+.5)+' {block_state:'+sb+(BIG?'':','+TRANS)+',Tags:['+tags.map(q).join(',')+','+q(NEW)+']}';
+      if(BIG){let t=TL.get(ti);if(!t){t=[];TL.set(ti,t);}t.push(cmd);}else L2.push(cmd);}
+    if(BIG){const lt=[];
+      for(const[ti,cmds]of TL){const a=Math.floor(ti/TZN),b=ti%TZN;TILES.set(ti,[a,b]);
+        // dopo la creazione: dimensione e contorno, stati girati, generazione; poi subito i controlli, così i blocchi già piazzati non si vedono
+        cmds.push('execute as @e[type=block_display,tag='+NEW+'] run data merge entity @s {'+TRANS+'}',...ENDL,
+          'execute positioned ^'+(a*TS+TS/2)+' ^'+y+' ^'+(b*TS+TS/2)+' run function #'+ns+':controlli');
+        lt.push([ti,await packText(cmds.join('\n')+'\n')]);}
+      LTILES.push(lt);LAY.push(null);
+      // se intorno a un giocatore ci sarebbero troppi fantasmi (livelli pieni, come un campo), la zona si stringe a 3 × 3 riquadri
+      for(const[ti]of TL){const a=Math.floor(ti/TZN),b=ti%TZN;let n=0;
+        for(let da=-2;da<=2;da++)for(let db=-2;db<=2;db++){const t=TL.get((a+da)*TZN+b+db);if(t&&b+db>=0&&b+db<TZN)n+=t.length-5;}
+        if(n>3000)TRAD=1;}}
+    else{if(L2.length)L2.push(...ENDL);LAY.push(await packText(L2.join('\n')+'\n'));}
+    cnt.push(v.layers[y].length);
     if(onProgress&&y%3===0)onProgress(y+1,Y);}
 
   // costruzione girata: i fantasmi appena creati con una direzione prendono lo stato girato (quello da piazzare)
@@ -2172,7 +2197,7 @@ async function dataPack(B,v,onProgress){
   // cosa manca davvero adesso: conta i fantasmi ancora accesi di ogni materiale (gli arancioni hanno già il blocco giusto)
   const LEFT='@e[type=block_display,tag='+G+',tag=!'+R+',tag=!'+OK+',limit=1]';
   F.mancano=[...OBJ,'execute unless entity '+LEFT+' run '+line([{text:T('Non manca niente: nessun fantasma da completare.'),color:'yellow'},B_NEXT]),
-    'execute if entity '+LEFT+' run '+say(T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
+    'execute if entity '+LEFT+' run '+say(BIG?T('Ti mancano ancora, nella zona vicino a te:'):T('Ti mancano ancora, per il fantasma acceso:'),'gold')];
   for(const g of grp){const sel='@e[type=block_display,tag='+G+'_m'+g.j+',tag=!'+R+',tag=!'+OK+']';
     F.mancano.push('execute store result score '+MS+' bpb if entity '+sel);
     for(const n of g.mul){F.mancano.push('execute store result score '+MT+' bpb if entity @e[type=block_display,tag='+G+'_m'+g.j+'_'+n+',tag=!'+R+',tag=!'+OK+']');
@@ -2220,9 +2245,11 @@ async function dataPack(B,v,onProgress){
     'execute '+(X!==Z?'unless score '+RO+' bpb matches 1 ':'')+'at @e[type=marker,tag='+PV+',limit=1] run function '+I+'scatola',
     ...(X!==Z?['execute if score '+RO+' bpb matches 1 at @e[type=marker,tag='+PV+',limit=1] run function '+I+'scatola_girata']:[]),
     ...(PREOK?ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PV+',limit=1] run function '+I+'anteprima_'+a):[])];
+  // nuova generazione: si tolgono i fantasmi caricati, e quelli rimasti in zone non caricate spariranno quando un giocatore si avvicina
+  const NUOVA=['kill @e[type=block_display,tag='+G+']','scoreboard players add '+GEN+' bpbgen 1'];
   F['interno/esci']=['kill @e[type=block_display,tag='+PB+']','kill @e[type=marker,tag='+PV+']','kill @e[type=marker,tag='+PT+']','kill @e[type=interaction,tag='+CK+']','scoreboard players set '+PM+' bpb 0','tag @a remove '+PZ];
   // entra nella modalità: chi l'ha chiesta guida la scatola (se il comando arriva da un blocco comandi, il giocatore più vicino)
-  F['interno/piazza']=[...OBJ,'function '+I+'esci','kill @e[type=block_display,tag='+G+']',...KILLG,'scoreboard players set '+ON+' bpb 0',ACT,L0,...R0,
+  F['interno/piazza']=[...OBJ,'function '+I+'esci',...NUOVA,...(BIG?['function '+I+'svuota']:[]),...KILLG,'scoreboard players set '+ON+' bpb 0',ACT,L0,...R0,
     'tag @s[type=player] add '+PZ,'execute unless entity @a[tag='+PZ+'] run tag @p add '+PZ,
     'execute at @a[tag='+PZ+',limit=1] align xyz run summon marker ~ ~ ~ {Tags:['+q(PV)+']}',
     'execute at @a[tag='+PZ+',limit=1] align xyz run summon marker ~ ~ ~ {Tags:['+q(PT)+']}',
@@ -2255,19 +2282,23 @@ async function dataPack(B,v,onProgress){
     'execute unless block ~ ~ ~ #'+ns+':vuoto align xyz positioned ~ ~1 ~ run tp @e[type=marker,tag='+PT+',limit=1] ~ ~ ~',
     'execute unless block ~ ~ ~ #'+ns+':vuoto run scoreboard players set '+RS+' bpb 1000',
     'execute if score '+RS+' bpb matches ..96 positioned ^ ^ ^0.25 run function '+I+'raggio'];
-  F['interno/fissa']=['kill @e[type=marker,tag='+O+']','execute at @e[type=marker,tag='+PV+',limit=1] run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',
+  // l'angolo resta sempre caricato (forceload di un chunk): da lì partono livelli e misure anche quando sei lontano
+  const ANGOLO=['execute at @e[type=marker,tag='+O+',limit=1] run forceload add ~ ~',
+    'execute store result score #'+sl+'_ox bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[0]','execute store result score #'+sl+'_oz bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[2]'];
+  F['interno/fissa']=['execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']','execute at @e[type=marker,tag='+PV+',limit=1] run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',...ANGOLO,
     'execute at @e[type=marker,tag='+PV+',limit=1] run playsound minecraft:block.note_block.pling master @a ~ ~ ~ 0.8 1.4','function '+I+'esci','function '+ns+':show'];
   F.annulla=['function '+I+'esci',say(T('Posizionamento annullato.'),'yellow'),'execute if entity @e[type=marker,tag='+O+'] run function '+ns+':show'];
   F.start=[...OBJ,'scoreboard players set '+L+' bpb 0','scoreboard players set '+ROT+' bpb 0','function '+I+'piazza'];
   F.sposta=[...OBJ,'function '+I+'piazza'];
   // come prima: la costruzione parte dal blocco dove hai i piedi
-  F.qui=[...OBJ,'function '+I+'esci',L0,'kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',
+  F.qui=[...OBJ,'function '+I+'esci',L0,'execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',...ANGOLO,
     say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z).'),'yellow'),
     ...(FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.',FEET),'yellow')]:[]),
     'function '+ns+':show'];
 
   /* ---------- guide di misura: contorno del livello, tacche ogni 5 blocchi (più lunghe ogni 10) e centro; seguono il livello corrente ---------- */
-  const bar=(x,z,lx,lz,blk)=>'summon block_display ~'+cc(x)+' ~ ~'+cc(z)+' {block_state:{Name:"minecraft:'+blk+'",id:"minecraft:'+blk+'"},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0.02f,0f],scale:['+f(lx)+',0.04f,'+f(lz)+']},brightness:{sky:15,block:15},Tags:['+q(GM)+','+q('bpb_misure')+']}';
+  // ogni pezzo sta nell'angolo e si disegna spostato: così è sempre in una zona caricata, anche per le costruzioni enormi
+  const bar=(x,z,lx,lz,blk)=>'summon block_display ~ ~ ~ {block_state:{Name:"minecraft:'+blk+'",id:"minecraft:'+blk+'"},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:['+f(x)+',0.02f,'+f(z)+'],scale:['+f(lx)+',0.04f,'+f(lz)+']},brightness:{sky:15,block:15},view_range:'+f(Math.max(1,Math.ceil(Math.max(X,Z)/48)))+',Tags:['+q(GM)+','+q('bpb_misure')+']}';
   const mkDR=(X,Z)=>{const DR=[bar(0,-.08,X,.06,'yellow_concrete'),bar(0,Z+.02,X,.06,'yellow_concrete'),bar(-.08,0,.06,Z,'yellow_concrete'),bar(X+.02,0,.06,Z,'yellow_concrete')];
     for(let k=5;k<X;k+=5){const l=k%10?.5:1;DR.push(bar(k-.03,-.08-l,.06,l,'orange_concrete'),bar(k-.03,Z+.08,.06,l,'orange_concrete'));}
     for(let k=5;k<Z;k+=5){const l=k%10?.5:1;DR.push(bar(-.08-l,k-.03,l,.06,'orange_concrete'),bar(X+.08,k-.03,l,.06,'orange_concrete'));}
@@ -2290,22 +2321,24 @@ async function dataPack(B,v,onProgress){
     'execute unless score '+GT+' bpb matches 1 if score '+RO+' bpb matches 1 run '+say(T('Misure accese: contorno di {0} × {1} blocchi sul livello corrente, tacche arancioni ogni 5 blocchi (più lunghe ogni 10), in azzurro il centro. Seguono il livello; lo stesso pulsante le spegne.',Z,X),'yellow')];
 
   /* ---------- livelli ---------- */
-  F.show=[...OBJ,'kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 1',ACT,'function '+I+'origine'];
-  for(let y=0;y<Y;y++){F.show.push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+OR+',limit=1] run function '+I+'livello/'+(y+1),
+  F.show=[...OBJ,...NUOVA,'scoreboard players set '+ON+' bpb 1',ACT,'function '+I+'origine',...(BIG?['function '+I+'svuota']:[])];
+  for(let y=0;y<Y;y++){if(!BIG)F.show.push('execute if score '+L+' bpb matches '+y+' at @e[type=marker,tag='+OR+',limit=1] run function '+I+'livello/'+(y+1));
+    F.show.push(
     'execute if score '+L+' bpb matches '+y+' run '+say(T(cnt[y]===1?'{0}: livello {1} di {2}, {3} blocco.':'{0}: livello {1} di {2}, {3} blocchi.',name,y+1,Y,cnt[y])));
     if(matLine[y])F.show.push('execute if score '+L+' bpb matches '+y+' run '+matLine[y]);}
+  if(BIG)F.show.push(say(T('Costruzione grande: i fantasmi compaiono solo nei {0} blocchi intorno a ogni giocatore e seguono chi si muove, così il gioco non rallenta.',TRAD===2?'30-50':'15-30'),'gray'),'function '+I+'finestra');
   F.show.push('execute if score '+GD+' bpb matches 1 run function '+I+'misure_qui',MENU);
   // avanti e indietro saltano i livelli rimasti vuoti (per esempio dopo aver escluso il terreno)
   const NZ=cnt.map((n,y)=>n?y:-1).filter(y=>y>=0),TMP='#'+sl+'_s';
   const step=(a,b)=>'execute if score '+L+' bpb matches '+a+' run scoreboard players set '+TMP+' bpb '+b;
   F.next=[...OBJ,L0,'scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(0,-1).map((y,i)=>step(y,NZ[i+1])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
   F.prev=[...OBJ,L0,'scoreboard players operation '+TMP+' bpb = '+L+' bpb',...NZ.slice(1).map((y,i)=>step(y,NZ[i])),'scoreboard players operation '+L+' bpb = '+TMP+' bpb','function '+ns+':show'];
-  const NEAR=BIG?',distance=..16':'';
+  const NEAR=BIG?',distance=..16':''; // 16: copre anche un riquadro intero (mezza diagonale 11,3) quando lo si controlla dal centro
   if(BIG)F.all=[say(T('{0} ha {1} blocchi: il fantasma completo metterebbe in difficoltà il gioco, quindi qui è disattivato. Cambia livello con Avanti e Indietro.',name,NUM(B.total)),'yellow')];
   else{F.all=[...OBJ,'kill @e[type=block_display,tag='+G+']','scoreboard players set '+ON+' bpb 2',ACT,'function '+I+'origine'];
   for(let y=0;y<Y;y++)F.all.push('execute at @e[type=marker,tag='+OR+',limit=1] run function '+I+'livello/'+(y+1));
   F.all.push(line([{text:T('{0}: fantasma completo, {1} blocchi.',name,B.total),color:'green'},B_SHOW]));}
-  F.clear=['function '+I+'esci','kill @e[type=block_display,tag='+G+']',...KILLG,'kill @e[type=marker,tag='+O+']','kill @e[type=marker,tag='+OR+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',
+  F.clear=['function '+I+'esci',...NUOVA,...(BIG?['function '+I+'svuota']:[]),...KILLG,'execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']','kill @e[type=marker,tag='+OR+']','scoreboard players set '+ON+' bpb 0','execute if score #attivo bpb matches '+ID+' run scoreboard players reset #attivo bpb',
     line([{text:T('Fantasma di "{0}" rimosso.',name),color:'yellow'},B_START])];
 
   /* ---------- ogni tick ---------- */
@@ -2316,18 +2349,54 @@ async function dataPack(B,v,onProgress){
     'execute '+AT+'as @e[type=block_display,tag='+W+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+I+'libero',
     'execute '+AT+'as @e[type=block_display,tag='+R+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+I+'libero',
     // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente), nascosti o nessuno
-    'execute if score '+ON+' bpb matches 1 unless entity '+LEFT+' run function '+I+'fine',
+    ...(BIG?[]:['execute if score '+ON+' bpb matches 1 unless entity '+LEFT+' run function '+I+'fine']),
+    'scoreboard players add '+FC+' bpb 1','execute if score '+FC+' bpb matches 10.. run function '+I+'ogni10',
     // pulsanti in chat
     'execute as @a[scores={'+TR+'=1..}] at @s run function '+I+'clic','scoreboard players enable @a '+TR,
     // annuncio unico dopo /reload e pulsante comune [Mostra l'elenco]: li gestisce il primo pack che arriva, gli altri trovano già fatto
     'execute if score #annuncio bpb matches 1 run function bpb:interno/annuncio',
     'execute as @a[scores={bpbt=1..}] run function bpb:interno/lista_clic','scoreboard players enable @a bpbt',
     'execute if score '+PM+' bpb matches 1 as @a[tag='+PZ+',limit=1] at @s run function '+I+'piazza_tick'];
+  // ogni mezzo secondo: i fantasmi di una generazione vecchia vicino ai giocatori spariscono (anche quelli della 0.5 senza numero),
+  // e per le costruzioni grandi si aggiornano i riquadri vicini
+  F['interno/ogni10']=['scoreboard players set '+FC+' bpb 0',
+    'execute at @a as @e[type=block_display,tag='+G+',distance=..64] unless score @s bpbgen = '+GEN+' bpbgen run kill @s',
+    ...(BIG?['execute if score '+ON+' bpb matches 1.. run function '+I+'finestra']:[])];
   F['interno/fine']=['scoreboard players set '+ON+' bpb 3',
     'execute store result score '+N+' bpb if entity @e[type=block_display,tag='+R+']',
     'execute if score '+N+' bpb matches 1.. run tellraw @a '+q([{text:T('Fantasmi arancioni rimasti: '),color:'gold'},{score:{name:N,objective:'bpb'},color:'gold'},{text:T(' (blocchi giusti ma girati in un altro modo). Puoi sistemarli o andare avanti.'),color:'gold'}]),
     'execute if score '+L+' bpb matches ..'+(Y-2)+' run '+line([{text:T('Livello completato!'),color:'gold'},B_NEXT]),
     'execute if score '+L+' bpb matches '+(Y-1)+' run '+say(T('Costruzione finita: "{0}" è completa!',name),'gold')];
+
+  if(BIG){
+    const TL=[...TILES.entries()].sort((p,q)=>p[0]-q[0]),Wn=i=>'#'+sl+'_w'+i,Ln=i=>'#'+sl+'_l'+i,P='#'+sl+'_p',CUR='#'+sl+'_cur',BUD='#'+sl+'_bud';
+    // tutti i riquadri tornano "da caricare" (dopo un cambio di livello o Togli i fantasmi sono già stati tolti)
+    F['interno/svuota']=TL.map(([i])=>'scoreboard players set '+Ln(i)+' bpb 0');
+    // posizione del giocatore nelle coordinate della costruzione (inverso della rotazione), poi il riquadro in cui si trova
+    F['interno/finestra_g']=['execute store result score '+P+'x bpb run data get entity @s Pos[0]','execute store result score '+P+'z bpb run data get entity @s Pos[2]',
+      'scoreboard players operation '+P+'x bpb -= #'+sl+'_ox bpb','scoreboard players operation '+P+'z bpb -= #'+sl+'_oz bpb',
+      'scoreboard players set '+P+'cx bpb '+(X-1),'scoreboard players set '+P+'cz bpb '+(Z-1),'scoreboard players set #bpb_ts bpb '+TS,
+      'execute if score '+ROT+' bpb matches 0 run scoreboard players operation '+P+'lx bpb = '+P+'x bpb','execute if score '+ROT+' bpb matches 0 run scoreboard players operation '+P+'lz bpb = '+P+'z bpb',
+      'execute if score '+ROT+' bpb matches 1 run scoreboard players operation '+P+'lx bpb = '+P+'z bpb','execute if score '+ROT+' bpb matches 1 run scoreboard players operation '+P+'lz bpb = '+P+'cz bpb','execute if score '+ROT+' bpb matches 1 run scoreboard players operation '+P+'lz bpb -= '+P+'x bpb',
+      'execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lx bpb = '+P+'cx bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lx bpb -= '+P+'x bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lz bpb = '+P+'cz bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lz bpb -= '+P+'z bpb',
+      'execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lz bpb = '+P+'x bpb','execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lx bpb = '+P+'cx bpb','execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lx bpb -= '+P+'z bpb',
+      'scoreboard players operation '+P+'lx bpb /= #bpb_ts bpb','scoreboard players operation '+P+'lz bpb /= #bpb_ts bpb',
+      ...TL.map(([i,[a,b]])=>'execute if score '+P+'lx bpb matches '+(a-TRAD)+'..'+(a+TRAD)+' if score '+P+'lz bpb matches '+(b-TRAD)+'..'+(b+TRAD)+' run scoreboard players set '+Wn(i)+' bpb 1')];
+    // carica il riquadro #cur del livello acceso, dal punto girato (angolo + spostamento, con la rotazione)
+    F['interno/carica']=[];for(let y=0;y<Y;y++)if(LTILES[y].length)F['interno/carica'].push('execute if score '+L+' bpb matches '+y+' run function '+I+'l/'+(y+1));
+    F['interno/carica_qui']=ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+O+',limit=1] positioned ~'+OFF[r][0]+' ~ ~'+OFF[r][1]+' rotated '+a+' 0 run function '+I+'carica');
+    // ogni mezzo secondo: quali riquadri servono (vicino ad almeno un giocatore); si tolgono quelli lontani e si caricano al massimo 8 nuovi
+    F['interno/finestra']=[...TL.map(([i])=>'scoreboard players set '+Wn(i)+' bpb 0'),'execute as @a at @s run function '+I+'finestra_g','scoreboard players set '+BUD+' bpb 8'];
+    for(const[i]of TL)F['interno/finestra'].push('execute if score '+Wn(i)+' bpb matches 0 if score '+Ln(i)+' bpb matches 1 run kill @e[type=block_display,tag='+G+'_t'+i+']',
+      'execute if score '+Wn(i)+' bpb matches 0 run scoreboard players set '+Ln(i)+' bpb 0');
+    for(const[i]of TL)F['interno/finestra'].push('scoreboard players set '+CUR+' bpb -1',
+      'execute if score '+Wn(i)+' bpb matches 1 unless score '+Ln(i)+' bpb matches 1 if score '+BUD+' bpb matches 1.. run scoreboard players set '+CUR+' bpb '+i,
+      // prima si tolgono eventuali resti dello stesso riquadro, poi si crea
+      'execute if score '+CUR+' bpb matches '+i+' run kill @e[type=block_display,tag='+G+'_t'+i+']',
+      'execute if score '+CUR+' bpb matches '+i+' run function '+I+'carica_qui','execute if score '+CUR+' bpb matches '+i+' run scoreboard players set '+Ln(i)+' bpb 1',
+      'execute if score '+CUR+' bpb matches '+i+' run scoreboard players remove '+BUD+' bpb 1');
+    for(let y=0;y<Y;y++)if(LTILES[y].length)F['interno/l/'+(y+1)]=LTILES[y].map(([i])=>'execute if score '+CUR+' bpb matches '+i+' run function '+I+'l/'+(y+1)+'/'+i);
+  }
 
   /* ---------- controlli dei blocchi ---------- */
   // un fantasma cambia stato con poche funzioni comuni; il nome del blocco giusto lo scrive "nome", che riconosce il tipo dall'etichetta del fantasma
@@ -2386,7 +2455,8 @@ async function dataPack(B,v,onProgress){
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
   for(const[dir,bdir]of[['functions','blocks'],['function','block']]){ // nomi al plurale fino alla 1.20.6, al singolare dalla 1.21
     for(const fn in F)files.push({name:'data/'+ns+'/'+dir+'/'+fn+'.mcfunction',data:te.encode(F[fn].join('\n')+'\n')});
-    LAY.forEach((e,y)=>files.push({name:'data/'+ns+'/'+dir+'/interno/livello/'+(y+1)+'.mcfunction',...e}));
+    LAY.forEach((e,y)=>{if(e)files.push({name:'data/'+ns+'/'+dir+'/interno/livello/'+(y+1)+'.mcfunction',...e});});
+    if(BIG)LTILES.forEach((lt,y)=>lt.forEach(([i,e])=>files.push({name:'data/'+ns+'/'+dir+'/interno/l/'+(y+1)+'/'+i+'.mcfunction',...e})));
     files.push({name:'data/'+ns+'/tags/'+dir+'/controlli.json',data:te.encode(JSON.stringify({values:tagVals}))});
     files.push({name:'data/'+ns+'/tags/'+bdir+'/vuoto.json',data:te.encode(JSON.stringify(VUOTO))});
     // comandi corti: uguali in tutti i pack; il tag bpb:cmd raccoglie il pezzo di ogni pack installato
@@ -2899,7 +2969,7 @@ $('dlZip').addEventListener('click',async()=>{
 $('dlPack').addEventListener('click',async()=>{
   const btn=$('dlPack');btn.disabled=true;dlMsg(T('Preparo il data pack…'));
   try{const B=S.B;await saveFile(dpNs(B)+T('_fantasma')+'.zip',await dataPack(B,V(),(a,b)=>dlMsg(T('Preparo il data pack… livello {0} di {1}',a,b))));
-    if(B.total>DPBIG)dlMsg(T('Scaricato. Costruzione molto grande: in gioco il fantasma completo (:all) è disattivato e i fantasmi si controllano solo entro 16 blocchi da te. Il primo /reload può richiedere qualche secondo.'));}
+    if(B.total>DPBIG)dlMsg(T('Scaricato. Costruzione molto grande: in gioco i fantasmi compaiono solo intorno a chi gioca (per qualche decina di blocchi) e seguono chi si muove, così il gioco non rallenta; il fantasma completo (Tutto) è disattivato. Il primo /reload può richiedere qualche secondo.'));}
   catch(e){dlMsg(T('Non sono riuscito a creare il data pack.'));}
   finally{btn.disabled=false;}
 });
@@ -3184,7 +3254,7 @@ $('remote').hidden=false;renderRemoteStatus();
 DL={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return{status:'saved'};}};
 $('dlPdf').disabled=false;$('dlZip').disabled=false;$('dlPack').disabled=false;
-const APP_VERSION='0.5';
+const APP_VERSION='0.5.1';
 /* app installabile: il browser offre l'installazione (Chrome, Edge, Android); su iPhone e iPad si spiega come fare da Safari */
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 {let promptEv=null;const ib=$('installBtn'),im=$('installMsg');
