@@ -2362,14 +2362,14 @@ async function dataPack(B,v,onProgress){
     'execute '+AT+'as @e[type=block_display,tag='+R+NEAR+'] at @s if block ~ ~ ~ #'+ns+':vuoto run function '+I+'libero',
     // il livello è finito quando restano solo fantasmi arancioni (blocco giusto girato diversamente), nascosti o nessuno
     ...(BIG?[]:['execute if score '+ON+' bpb matches 1 unless entity '+LEFT+' run function '+I+'fine']),
-    'scoreboard players add '+FC+' bpb 1','execute if score '+FC+' bpb matches 10.. run function '+I+'ogni10',
+    'scoreboard players add '+FC+' bpb 1','execute if score '+FC+' bpb matches 5.. run function '+I+'ogni10',
     // pulsanti in chat
     'execute as @a[scores={'+TR+'=1..}] at @s run function '+I+'clic','scoreboard players enable @a '+TR,
     // annuncio unico dopo /reload e pulsante comune [Mostra l'elenco]: li gestisce il primo pack che arriva, gli altri trovano già fatto
     'execute if score #annuncio bpb matches 1 run function bpb:interno/annuncio',
     'execute as @a[scores={bpbt=1..}] run function bpb:interno/lista_clic','scoreboard players enable @a bpbt',
     'execute if score '+PM+' bpb matches 1 as @a[tag='+PZ+',limit=1] at @s run function '+I+'piazza_tick'];
-  // ogni mezzo secondo: i fantasmi di una generazione vecchia vicino ai giocatori spariscono (anche quelli della 0.5 senza numero),
+  // ogni quarto di secondo: i fantasmi di una generazione vecchia vicino ai giocatori spariscono (anche quelli della 0.5 senza numero),
   // e per le costruzioni grandi si aggiornano i riquadri vicini
   F['interno/ogni10']=['scoreboard players set '+FC+' bpb 0',
     'execute at @a as @e[type=block_display,tag='+G+',distance=..64] unless score @s bpbgen = '+GEN+' bpbgen run kill @s',
@@ -2393,16 +2393,24 @@ async function dataPack(B,v,onProgress){
       'execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lx bpb = '+P+'cx bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lx bpb -= '+P+'x bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lz bpb = '+P+'cz bpb','execute if score '+ROT+' bpb matches 2 run scoreboard players operation '+P+'lz bpb -= '+P+'z bpb',
       'execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lz bpb = '+P+'x bpb','execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lx bpb = '+P+'cx bpb','execute if score '+ROT+' bpb matches 3 run scoreboard players operation '+P+'lx bpb -= '+P+'z bpb',
       'scoreboard players operation '+P+'lx bpb /= #bpb_ts bpb','scoreboard players operation '+P+'lz bpb /= #bpb_ts bpb',
-      ...TL.map(([i,[a,b]])=>'execute if score '+P+'lx bpb matches '+(a-TRAD)+'..'+(a+TRAD)+' if score '+P+'lz bpb matches '+(b-TRAD)+'..'+(b+TRAD)+' run scoreboard players set '+Wn(i)+' bpb 1')];
+      ...TL.map(([i,[a,b]])=>'execute if score '+P+'lx bpb matches '+(a-TRAD)+'..'+(a+TRAD)+' if score '+P+'lz bpb matches '+(b-TRAD)+'..'+(b+TRAD)+' unless score '+Wn(i)+' bpb matches 2 run scoreboard players set '+Wn(i)+' bpb 1'),
+      // il riquadro dove sei è il primo da creare
+      ...TL.map(([i,[a,b]])=>'execute if score '+P+'lx bpb matches '+a+' if score '+P+'lz bpb matches '+b+' run scoreboard players set '+Wn(i)+' bpb 2')];
     // carica il riquadro #cur del livello acceso, dal punto girato (angolo + spostamento, con la rotazione)
     F['interno/carica']=[];for(let y=0;y<Y;y++)if(LTILES[y].length)F['interno/carica'].push('execute if score '+L+' bpb matches '+y+' run function '+I+'l/'+(y+1));
     F['interno/carica_qui']=ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+O+',limit=1] positioned ~'+OFF[r][0]+' ~ ~'+OFF[r][1]+' rotated '+a+' 0 run function '+I+'carica');
-    // ogni mezzo secondo: quali riquadri servono (vicino ad almeno un giocatore); si tolgono quelli lontani e si caricano al massimo 8 nuovi
-    F['interno/finestra']=[...TL.map(([i])=>'scoreboard players set '+Wn(i)+' bpb 0'),'execute as @a at @s run function '+I+'finestra_g','scoreboard players set '+BUD+' bpb 8'];
+    // ogni quarto di secondo: quali riquadri servono (vicino ad almeno un giocatore); si tolgono quelli lontani e si creano al massimo 12 nuovi, prima quelli dove sono i giocatori
+    const FASE='#'+sl+'_fase';
+    // l'angolo si rilegge ogni volta (così funziona anche con una costruzione messa con una versione precedente del pack)
+    F['interno/finestra']=['execute store result score #'+sl+'_ox bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[0]','execute store result score #'+sl+'_oz bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[2]',
+      ...TL.map(([i])=>'scoreboard players set '+Wn(i)+' bpb 0'),'execute as @a at @s run function '+I+'finestra_g','scoreboard players set '+BUD+' bpb 12'];
     for(const[i]of TL)F['interno/finestra'].push('execute if score '+Wn(i)+' bpb matches 0 if score '+Ln(i)+' bpb matches 1 run kill @e[type=block_display,tag='+G+'_t'+i+']',
       'execute if score '+Wn(i)+' bpb matches 0 run scoreboard players set '+Ln(i)+' bpb 0');
-    for(const[i]of TL)F['interno/finestra'].push('scoreboard players set '+CUR+' bpb -1',
-      'execute if score '+Wn(i)+' bpb matches 1 unless score '+Ln(i)+' bpb matches 1 if score '+BUD+' bpb matches 1.. run scoreboard players set '+CUR+' bpb '+i,
+    // prima i riquadri dove ci sono i giocatori, poi quelli intorno
+    F['interno/finestra'].push('scoreboard players set '+FASE+' bpb 2','function '+I+'finestra_carica','scoreboard players set '+FASE+' bpb 1','function '+I+'finestra_carica');
+    F['interno/finestra_carica']=[];
+    for(const[i]of TL)F['interno/finestra_carica'].push('scoreboard players set '+CUR+' bpb -1',
+      'execute if score '+Wn(i)+' bpb >= '+FASE+' bpb unless score '+Ln(i)+' bpb matches 1 if score '+BUD+' bpb matches 1.. run scoreboard players set '+CUR+' bpb '+i,
       // prima si tolgono eventuali resti dello stesso riquadro, poi si crea
       'execute if score '+CUR+' bpb matches '+i+' run kill @e[type=block_display,tag='+G+'_t'+i+']',
       'execute if score '+CUR+' bpb matches '+i+' run function '+I+'carica_qui','execute if score '+CUR+' bpb matches '+i+' run scoreboard players set '+Ln(i)+' bpb 1',
