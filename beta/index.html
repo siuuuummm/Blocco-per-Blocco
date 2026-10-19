@@ -2403,7 +2403,8 @@ async function dataPack(B,v,onProgress){
     const FASE='#'+sl+'_fase';
     // l'angolo si rilegge ogni volta (così funziona anche con una costruzione messa con una versione precedente del pack)
     F['interno/finestra']=['execute store result score #'+sl+'_ox bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[0]','execute store result score #'+sl+'_oz bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[2]',
-      ...TL.map(([i])=>'scoreboard players set '+Wn(i)+' bpb 0'),'execute as @a at @s run function '+I+'finestra_g','scoreboard players set '+BUD+' bpb 12'];
+      ...TL.map(([i])=>'scoreboard players set '+Wn(i)+' bpb 0'),// solo chi è nella stessa dimensione della costruzione (chi è nel Nether non crea fantasmi a caso)
+      'execute as @a at @s if entity @e[type=marker,tag='+O+',distance=0..] run function '+I+'finestra_g','BUDGET'];
     for(const[i]of TL)F['interno/finestra'].push('execute if score '+Wn(i)+' bpb matches 0 if score '+Ln(i)+' bpb matches 1 run kill @e[type=block_display,tag='+G+'_t'+i+']',
       'execute if score '+Wn(i)+' bpb matches 0 run scoreboard players set '+Ln(i)+' bpb 0');
     // prima i riquadri dove ci sono i giocatori, poi quelli intorno
@@ -2469,6 +2470,12 @@ async function dataPack(B,v,onProgress){
       'execute if score #bpb_n bpb matches 1 run function #bpb:elenco',
       'execute if score #bpb_n bpb matches 2.. run tellraw @a '+q(['',{text:'Blocco per Blocco: ',color:'yellow'},{score:{name:'#bpb_n',objective:'bpb'},color:'yellow'},{text:T(' costruzioni pronte. '),color:'yellow'},B_LIST])],
     'interno/lista_clic':['scoreboard players reset @s bpbt','function bpb:lista']};
+  // quanti riquadri creare per volta: al massimo 12, meno se ogni riquadro costa molti comandi (tanti tipi di blocco da controllare),
+  // così un giro non supera mai il limite di comandi per tick del gioco (65536) e non resta a metà
+  if(BIG){const ctl=Object.keys(F).filter(k=>k.startsWith('interno/controlli')).reduce((n,k)=>n+F[k].length,0);
+    let mt=0;for(const lt of LTILES)mt=Math.max(mt,lt.length);
+    const tileCost=ctl+4*TS*TS+mt+20;const bud=Math.max(2,Math.min(12,Math.floor(30000/tileCost)));
+    F['interno/finestra']=F['interno/finestra'].map(l=>l==='BUDGET'?'scoreboard players set #'+sl+'_bud bpb '+bud:l);}
   const te=new TextEncoder(),files=[];
   const meta={pack:{pack_format:15,supported_formats:{min_inclusive:12,max_inclusive:999},min_format:12,max_format:999,description:T('Blocco per Blocco: fantasma di {0}',name)}};
   files.push({name:'pack.mcmeta',data:te.encode(JSON.stringify(meta,null,1))});
