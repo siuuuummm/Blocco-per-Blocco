@@ -2416,9 +2416,8 @@ async function dataPack(B,v,onProgress){
   const HIDE='transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0.5f,0.5f,0.5f],scale:[0f,0f,0f]},Glowing:0b,glow_color_override:-1';
   F['interno/fatto']=['tag @s add '+OK,'tag @s remove '+W,'tag @s remove '+R,'data merge entity @s {'+HIDE+'}'];
   F['interno/riappare']=['tag @s remove '+OK,'data merge entity @s {'+TRANS+',glow_color_override:-1}','execute if score '+ON+' bpb matches 3 run scoreboard players set '+ON+' bpb 1',
-    'scoreboard players set '+E+' bpb 3','function '+I+'nome','playsound minecraft:block.note_block.pling master @p ~ ~ ~ 0.6 0.7'];
-  F['interno/sbagliato']=['tag @s add '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:16711680}','scoreboard players set '+E+' bpb 1','function '+I+'nome',
-    'playsound minecraft:block.note_block.bass master @p ~ ~ ~ 0.8 0.6'];
+    'scoreboard players set '+E+' bpb 3','function '+I+'nome'];
+  F['interno/sbagliato']=['tag @s add '+W,'tag @s remove '+R,'data merge entity @s {glow_color_override:16711680}','scoreboard players set '+E+' bpb 1','function '+I+'nome'];
   F['interno/girato']=['tag @s add '+R,'tag @s remove '+W,'data merge entity @s {glow_color_override:16753920}','scoreboard players set '+E+' bpb 2','function '+I+'nome'];
   F['interno/nome']=[];
   const tagVals=[{id:I+'controlli',required:false}];F['interno/controlli']=[];
