@@ -387,7 +387,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line-stron
           <summary>Come usare il fantasma senza mod</summary>
           <ol>
             <li>Copia il file del data pack, senza estrarlo, in <code>.minecraft/saves/&lt;mondo&gt;/datapacks/</code>. Se il mondo è aperto scrivi <code>/reload</code>.</li>
-            <li>Clicca <b>[▶ Inizia]</b> nella chat, oppure scrivi <code class="dpcmd" data-f="start"></code>: compare una scatola gialla grande quanto la costruzione, che segue il blocco che guardi. Con il tasto destro la giri di 90° alla volta, con il tasto sinistro la costruzione parte lì; per annullare c'è il pulsante [Annulla]. Il punto scelto è l'angolo: la costruzione va sempre verso est (+X) e verso sud (+Z).</li>
+            <li>Clicca <b>[▶ Inizia]</b> nella chat, oppure scrivi <code class="dpcmd" data-f="start"></code>: compare una scatola gialla grande quanto la costruzione, che segue il blocco che guardi. Con il tasto destro la giri di 90° alla volta, con il tasto sinistro la costruzione parte lì; per annullare c'è il pulsante [Annulla]. Il blocco che guardi è un angolo della costruzione: girandola, ruota intorno a quel punto, così può andare in qualunque direzione.</li>
             <li>Compare il fantasma del livello 1, fatto di blocchi in miniatura con il contorno luminoso. Piazza i blocchi dentro i fantasmi: quando il blocco è quello giusto il fantasma sparisce, e a fine livello un messaggio te lo dice.</li>
             <li>Se sbagli blocco il fantasma diventa rosso e in basso sullo schermo leggi quale blocco va lì. Se il blocco è giusto ma girato in un altro modo, per esempio una scala al contrario o un tronco coricato, il fantasma diventa arancione. Togli il blocco e il fantasma torna normale.</li>
             <li>Se rompi per sbaglio un blocco giusto, il suo fantasma ricompare e in basso leggi quale blocco va lì: così non resta un buco. Vale per il livello acceso (o per tutto con il fantasma completo).</li>
@@ -927,6 +927,9 @@ const EN={"Modello 3D di {0}, livello {1} di {2}":"3D model of {0}, layer {1} of
 "{0}: livello {1} di {2}, {3} blocchi.": "{0}: layer {1} of {2}, {3} blocks.",
 "Il livello 1 è sotto terra: compare un blocco sotto il punto scelto, scava lì.": "Layer 1 is underground: it appears one block below the chosen spot, dig there.",
 "I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto il punto scelto, scava lì.": "The first {0} layers are underground: layer 1 appears {0} blocks below the chosen spot, dig there.",
+": compare una scatola gialla grande quanto la costruzione, che segue il blocco che guardi. Con il tasto destro la giri di 90° alla volta, con il tasto sinistro la costruzione parte lì; per annullare c'è il pulsante [Annulla]. Il blocco che guardi è un angolo della costruzione: girandola, ruota intorno a quel punto, così può andare in qualunque direzione.": ": a yellow box as big as the build appears and follows the block you look at. Right-click turns it 90° at a time, left-click and the build starts there; to cancel there is the [Cancel] button. The block you look at is a corner of the build: turning it rotates around that spot, so it can go in any direction.",
+"Guarda il punto dove vuoi l'angolo della costruzione: la scatola gialla mostra lo spazio che occupa ({0} × {1}, alta {2}). Girandola con il tasto destro, ruota intorno a quel punto.": "Look at the spot where you want the corner of the build: the yellow box shows the space it takes ({0} × {1}, {2} high). Right-click turns it around that spot.",
+"La costruzione ha un angolo nel blocco dove hai i piedi; con Ruota gira intorno a quel punto.": "The build has a corner at the block where you stand; Turn rotates it around that spot.",
 "Scaricato. Costruzione molto grande: in gioco i fantasmi compaiono solo intorno a chi gioca (per qualche decina di blocchi) e seguono chi si muove, così il gioco non rallenta; il fantasma completo (Tutto) è disattivato. Il primo /reload può richiedere qualche secondo.": "Downloaded. Very large build: in game the ghosts appear only around the players (for a few dozen blocks) and follow whoever moves, so the game stays smooth; the full ghost (All) is turned off. The first /reload may take a few seconds.",
 "Costruzione grande: i fantasmi compaiono solo nei {0} blocchi intorno a ogni giocatore e seguono chi si muove, così il gioco non rallenta.": "Large build: the ghosts appear only in the {0} blocks around each player and follow whoever moves, so the game stays smooth.",
 "Ti mancano ancora, nella zona vicino a te:": "Still missing, in the area near you:",
@@ -2113,7 +2116,8 @@ async function dataPack(B,v,onProgress){
       else if(k==='shape'&&/rail/.test(n))val=rotRail(val,r);
       o[key]=val;}return o;};
   const rotSt=(st,r)=>({n:st.n,p:rotProps(st.p,r,st.n)});
-  const ANG=[0,90,180,270],OFF=[[0,0],[Z,0],[X,Z],[0,X]],cell=(x,z,r)=>r===0?[x,z]:r===1?[Z-1-z,x]:r===2?[X-1-x,Z-1-z]:[z,X-1-x];
+  // CO: dove finisce la cella (0,0) della costruzione dopo la rotazione; il blocco che guardi è sempre quella cella (il perno), così girando la costruzione ruota intorno a lui
+  const ANG=[0,90,180,270],OFF=[[0,0],[Z,0],[X,Z],[0,X]],CO=[[0,0],[Z-1,0],[X-1,Z-1],[0,X-1]],cell=(x,z,r)=>r===0?[x,z]:r===1?[Z-1-z,x]:r===2?[X-1-x,Z-1-z]:[z,X-1-x];
   // materiali: stessi gruppi dell'elenco nell'app
   const all=countMats(v.layers.flat()),gi=new Map(),grp=all.map((r,j)=>{gi.set(r.d.name,j);const st=mcState(r.id,NOV,0,0,0);return{j,r,mc:st.n,mul:new Set()};});
   const cnt=[];
@@ -2241,10 +2245,11 @@ async function dataPack(B,v,onProgress){
   if(PREOK)for(let r=0;r<4;r++)F['interno/anteprima_'+ANG[r]]=vis.map(([x,y,z,st])=>{const[a,b]=cell(x,z,r);
     return'summon block_display ~ ~ ~ {block_state:'+snbt(rotSt(st,r))+',transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:['+f(a+.01)+','+f(y-FEET+.01)+','+f(b+.01)+'],scale:[0.98f,0.98f,0.98f]},brightness:{sky:15,block:15},teleport_duration:2,Tags:['+q(PB)+','+q('bpb_anteprima')+']}';});
   // ridisegna scatola e anteprima (all'inizio e quando giri), nel punto del marker mostrato
+  // da un punto (il perno) all'angolo della scatola per la rotazione attuale
+  const DAL=(r,seg)=>'positioned ~'+(seg*CO[r][0])+' ~ ~'+(seg*CO[r][1]);
   F['interno/disegna_anteprima']=['kill @e[type=block_display,tag='+PB+']',
-    'execute '+(X!==Z?'unless score '+RO+' bpb matches 1 ':'')+'at @e[type=marker,tag='+PV+',limit=1] run function '+I+'scatola',
-    ...(X!==Z?['execute if score '+RO+' bpb matches 1 at @e[type=marker,tag='+PV+',limit=1] run function '+I+'scatola_girata']:[]),
-    ...(PREOK?ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PV+',limit=1] run function '+I+'anteprima_'+a):[])];
+    ...ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PV+',limit=1] '+DAL(r,-1)+' run function '+I+(r%2&&X!==Z?'scatola_girata':'scatola')),
+    ...(PREOK?ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PV+',limit=1] '+DAL(r,-1)+' run function '+I+'anteprima_'+a):[])];
   // nuova generazione: si tolgono i fantasmi caricati, e quelli rimasti in zone non caricate spariranno quando un giocatore si avvicina
   const NUOVA=['kill @e[type=block_display,tag='+G+']','scoreboard players add '+GEN+' bpbgen 1'];
   F['interno/esci']=['kill @e[type=block_display,tag='+PB+']','kill @e[type=marker,tag='+PV+']','kill @e[type=marker,tag='+PT+']','kill @e[type=interaction,tag='+CK+']','scoreboard players set '+PM+' bpb 0','tag @a remove '+PZ];
@@ -2256,7 +2261,7 @@ async function dataPack(B,v,onProgress){
     'function '+I+'disegna_anteprima',
     'execute at @a[tag='+PZ+',limit=1] run summon interaction ~ ~ ~ {width:1.2f,height:1.2f,Tags:['+q(CK)+']}',
     'scoreboard players set '+PM+' bpb 1',
-    say(T('Guarda il punto dove vuoi l\'angolo della costruzione: la scatola gialla mostra lo spazio che occupa ({0} × {1}, alta {2}). La costruzione va verso est (+X) e verso sud (+Z).',X,Z,Y),'yellow'),
+    say(T('Guarda il punto dove vuoi l\'angolo della costruzione: la scatola gialla mostra lo spazio che occupa ({0} × {1}, alta {2}). Girandola con il tasto destro, ruota intorno a quel punto.',X,Z,Y),'yellow'),
     ...SOTTO,...(PREOK?[]:[say(T('La costruzione ha molti blocchi in vista ({0}): per non rallentare il gioco l\'anteprima mostra solo la scatola.',NUM(BIG?B.total:vis.length)),'gray')]),
     line([{text:T('Tasto sinistro: la metti lì. Tasto destro: la giri di 90°.'),color:'yellow'},B_ROT,B_HERE,B_CANCEL])];
   // ogni tick: prima i clic, poi la scatola si sposta dove guardi
@@ -2271,28 +2276,35 @@ async function dataPack(B,v,onProgress){
     'execute anchored eyes positioned ^ ^ ^1 run tp @e[type=interaction,tag='+CK+',limit=1] ~ ~-0.6 ~',
     'title @s actionbar '+q([{text:T('Tasto sinistro: metti qui la costruzione')+' · ',color:'yellow'},{text:T('Tasto destro: ruota')+' (',color:'gray'},{score:{name:RG,objective:'bpb'},color:'gray'},{text:'°)',color:'gray'}])];
   F['interno/destro']=['data remove entity @s interaction','execute unless score '+RCD+' bpb matches 1.. run function '+ns+':ruota','scoreboard players set '+RCD+' bpb 5'];
-  F['interno/segui']=['tp @e[type=marker,tag='+PV+',limit=1] ~ ~ ~','tp @e[type=block_display,tag='+PB+'] ~ ~ ~'];
+  F['interno/segui']=['tp @e[type=marker,tag='+PV+',limit=1] ~ ~ ~',...ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' '+DAL(r,-1)+' run tp @e[type=block_display,tag='+PB+'] ~ ~ ~')];
   // gira di 90 gradi: mentre scegli il punto ridisegna scatola e anteprima, dopo gira i fantasmi sul posto
-  F.ruota=[...OBJ,...R0,'scoreboard players add '+ROT+' bpb 1','execute if score '+ROT+' bpb matches 4.. run scoreboard players set '+ROT+' bpb 0','function '+I+'rot_conti',
+  // l'angolo resta sempre caricato (forceload di un chunk): da lì partono livelli e misure anche quando sei lontano
+  const ANGOLO=['execute at @e[type=marker,tag='+O+',limit=1] run forceload add ~ ~',
+    'execute store result score #'+sl+'_ox bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[0]','execute store result score #'+sl+'_oz bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[2]'];
+  const PQ='bpbq_'+sl;
+  F.ruota=[...OBJ,...R0,'kill @e[type=marker,tag='+PQ+']',
+    ...ANG.map((a,r)=>'execute unless score '+PM+' bpb matches 1 if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+O+',limit=1] '+DAL(r,1)+' run summon marker ~ ~ ~ {Tags:['+q(PQ)+']}'),
+    'scoreboard players add '+ROT+' bpb 1','execute if score '+ROT+' bpb matches 4.. run scoreboard players set '+ROT+' bpb 0','function '+I+'rot_conti',
     'execute if score '+PM+' bpb matches 1 run function '+I+'disegna_anteprima',
+    'execute if entity @e[type=marker,tag='+PQ+'] run function '+I+'ruota_perno',
     'execute unless score '+PM+' bpb matches 1 if entity @e[type=marker,tag='+O+'] run function '+ns+':show',
     'execute unless score '+PM+' bpb matches 1 run tellraw @a '+q([{text:T('Costruzione girata: '),color:'yellow'},{score:{name:RG,objective:'bpb'},color:'yellow'},{text:'°',color:'yellow'}])];
+  F['interno/ruota_perno']=['execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']',
+    ...ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PQ+',limit=1] '+DAL(r,-1)+' run summon marker ~ ~ ~ {Tags:['+q(O)+']}'),
+    ...ANGOLO,'kill @e[type=marker,tag='+PQ+']'];
   // raggio: avanza di un quarto di blocco alla volta fino a 24 blocchi; il primo blocco pieno che incontra decide il punto (il blocco sopra)
   F['interno/raggio']=['scoreboard players add '+RS+' bpb 1',
     'execute unless block ~ ~ ~ #'+ns+':vuoto align xyz positioned ~ ~1 ~ run tp @e[type=marker,tag='+PT+',limit=1] ~ ~ ~',
     'execute unless block ~ ~ ~ #'+ns+':vuoto run scoreboard players set '+RS+' bpb 1000',
     'execute if score '+RS+' bpb matches ..96 positioned ^ ^ ^0.25 run function '+I+'raggio'];
-  // l'angolo resta sempre caricato (forceload di un chunk): da lì partono livelli e misure anche quando sei lontano
-  const ANGOLO=['execute at @e[type=marker,tag='+O+',limit=1] run forceload add ~ ~',
-    'execute store result score #'+sl+'_ox bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[0]','execute store result score #'+sl+'_oz bpb run data get entity @e[type=marker,tag='+O+',limit=1] Pos[2]'];
-  F['interno/fissa']=['execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']','execute at @e[type=marker,tag='+PV+',limit=1] run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',...ANGOLO,
+  F['interno/fissa']=['execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']',...ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' at @e[type=marker,tag='+PV+',limit=1] '+DAL(r,-1).replace(' ~ ',' ~'+(FEET?'-'+FEET:'')+' ')+' run summon marker ~ ~ ~ {Tags:['+q(O)+']}'),...ANGOLO,
     'execute at @e[type=marker,tag='+PV+',limit=1] run playsound minecraft:block.note_block.pling master @a ~ ~ ~ 0.8 1.4','function '+I+'esci','function '+ns+':show'];
   F.annulla=['function '+I+'esci',say(T('Posizionamento annullato.'),'yellow'),'execute if entity @e[type=marker,tag='+O+'] run function '+ns+':show'];
   F.start=[...OBJ,'scoreboard players set '+L+' bpb 0','scoreboard players set '+ROT+' bpb 0','function '+I+'piazza'];
   F.sposta=[...OBJ,'function '+I+'piazza'];
   // come prima: la costruzione parte dal blocco dove hai i piedi
-  F.qui=[...OBJ,'function '+I+'esci',L0,'execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']','execute align xyz run summon marker ~ ~'+(FEET?'-'+FEET:'')+' ~ {Tags:['+q(O)+']}',...ANGOLO,
-    say(T('La costruzione parte dal blocco dove hai i piedi e si estende verso est (+X) e verso sud (+Z).'),'yellow'),
+  F.qui=[...OBJ,'function '+I+'esci',L0,...R0,'execute at @e[type=marker,tag='+O+',limit=1] run forceload remove ~ ~','kill @e[type=marker,tag='+O+']',...ANG.map((a,r)=>'execute if score '+ROT+' bpb matches '+r+' align xyz '+DAL(r,-1).replace(' ~ ',' ~'+(FEET?'-'+FEET:'')+' ')+' run summon marker ~ ~ ~ {Tags:['+q(O)+']}'),...ANGOLO,
+    say(T('La costruzione ha un angolo nel blocco dove hai i piedi; con Ruota gira intorno a quel punto.'),'yellow'),
     ...(FEET?[say(T(FEET===1?'Il livello 1 è sotto terra: compare un blocco sotto i tuoi piedi, scava lì.':'I primi {0} livelli sono sotto terra: il livello 1 compare {0} blocchi sotto i tuoi piedi, scava lì.',FEET),'yellow')]:[]),
     'function '+ns+':show'];
 
